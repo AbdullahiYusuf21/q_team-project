@@ -9,13 +9,41 @@ const MAX_QUBITS = 5
 
 // Gate definitions — name, label shown in cell, and its CSS colour variable
 const GATES = [
-  { id: 'H',    label: 'H',    color: 'var(--gate-h)'    },
-  { id: 'X',    label: 'X',    color: 'var(--gate-x)'    },
-  { id: 'Y',    label: 'Y',    color: 'var(--gate-y)'    },
-  { id: 'Z',    label: 'Z',    color: 'var(--gate-z)'    },
-  { id: 'S',    label: 'S',    color: 'var(--gate-s)'    },
-  { id: 'T',    label: 'T',    color: 'var(--gate-t)'    },
-  { id: 'CNOT', label: 'CX',   color: 'var(--gate-cnot)' },
+  { 
+    id: 'H', label: 'H', color: 'var(--gate-h)',
+    name: 'Hadamard',
+    desc: 'Creates superposition. Puts |0⟩ into 50/50 state.'
+  },
+  { 
+    id: 'X', label: 'X', color: 'var(--gate-x)',
+    name: 'Pauli-X',
+    desc: 'Quantum NOT gate. Flips |0⟩ to |1⟩ and vice versa.'
+  },
+  { 
+    id: 'Y', label: 'Y', color: 'var(--gate-y)',
+    name: 'Pauli-Y',
+    desc: 'Flip with complex phase. Combines X and Z effects.'
+  },
+  { 
+    id: 'Z', label: 'Z', color: 'var(--gate-z)',
+    name: 'Pauli-Z',
+    desc: 'Phase flip. Negates |1⟩ amplitude, invisible alone.'
+  },
+  { 
+    id: 'S', label: 'S', color: 'var(--gate-s)',
+    name: 'S Gate',
+    desc: '90° phase rotation. S² = Z.'
+  },
+  { 
+    id: 'T', label: 'T', color: 'var(--gate-t)',
+    name: 'T Gate',
+    desc: '45° phase rotation. T² = S, used in quantum Fourier transform.'
+  },
+  { 
+    id: 'CNOT', label: 'CX', color: 'var(--gate-cnot)',
+    name: 'CNOT',
+    desc: 'Flips target if control is |1⟩. Creates entanglement.'
+  },
 ]
 
 // Helper — create an empty grid: 2D array [qubit][step] = null
@@ -27,7 +55,7 @@ export default function CircuitBuilder() {
   const [nQubits,     setNQubits]     = useState(2)
   const [grid,        setGrid]        = useState(emptyGrid(2))
   const [selectedGate, setSelectedGate] = useState('H')
-  const [cnотControl,  setCnotControl]  = useState(null)  // tracks CNOT placement state
+  const [cnotControl,  setCnotControl]  = useState(null)  // tracks CNOT placement state
   const [result,       setResult]       = useState(null)
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState(null)
@@ -206,27 +234,33 @@ export default function CircuitBuilder() {
       </div>
 
       {/* ── Gate toolbar ── */}
-      <div style={styles.toolbar}>
-        {GATES.map(gate => (
-          <button
-            key={gate.id}
-            onClick={() => { setSelectedGate(gate.id); setCnotControl(null) }}
-            style={{
-              ...styles.gateBtn,
-              borderColor: gate.color,
-              color: selectedGate === gate.id ? 'var(--bg-primary)' : gate.color,
-              background: selectedGate === gate.id ? gate.color : 'transparent',
-            }}
-          >
-            {gate.label}
-          </button>
-        ))}
-        {selectedGate === 'CNOT' && (
-          <span style={styles.cnotHint}>
-            {cnotControl ? 'Now click the target qubit in the same column' : 'Click control qubit first'}
-          </span>
-        )}
+      {/* ── Gate toolbar ── */}
+<div style={styles.toolbar}>
+  {GATES.map(gate => (
+    <div key={gate.id} className="tooltip-wrapper">
+      <button
+        onClick={() => { setSelectedGate(gate.id); setCnotControl(null) }}
+        style={{
+          ...styles.gateBtn,
+          borderColor: gate.color,
+          color: selectedGate === gate.id ? 'var(--bg-primary)' : gate.color,
+          background: selectedGate === gate.id ? gate.color : 'transparent',
+        }}
+      >
+        {gate.label}
+      </button>
+      <div className="tooltip">
+        <div className="tooltip-title">{gate.name}</div>
+        <div className="tooltip-desc">{gate.desc}</div>
       </div>
+    </div>
+  ))}
+  {selectedGate === 'CNOT' && (
+    <span style={styles.cnotHint}>
+      {cnotControl ? 'Now click the target qubit in the same column' : 'Click control qubit first'}
+    </span>
+  )}
+</div>
 
       {/* ── Circuit grid ── */}
       <div style={styles.gridWrapper}>
@@ -234,38 +268,35 @@ export default function CircuitBuilder() {
         {/* Qubit labels + wire rows */}
         {Array.from({ length: nQubits }, (_, qubit) => (
           <div key={qubit} style={styles.qubitRow}>
-
-            {/* Qubit label */}
             <div style={styles.qubitLabel}>
               |q{qubit}⟩
-            </div>
-
-            {/* Wire line behind cells */}
-            <div style={styles.wireRow}>
-              {Array.from({ length: STEPS }, (_, step) => {
-                const { bg, border, color, label } = getCellStyle(qubit, step)
-                return (
-                  <div
+                </div>
+                <div style={styles.wireRow}>
+                  {/* Wire line behind cells */}
+                  <div style={styles.wire} />
+                  {Array.from({ length: STEPS }, (_, step) => {
+                    const { bg, border, color, label } = getCellStyle(qubit, step)
+                    return (
+                    <div
                     key={step}
                     onClick={() => handleCellClick(qubit, step)}
                     style={{
-                      ...styles.cell,
-                      background: bg,
-                      border,
-                      color,
-                    }}
-                  >
-                    {grid[qubit][step] || (
+                    ...styles.cell,
+                    background: bg,
+                    border,
+                    color,
+                   }}
+                >
+                   {grid[qubit][step] || (
                       selectedGate === 'CNOT' &&
                       cnotControl?.qubit === qubit &&
                       cnotControl?.step === step
                     ) ? label : ''}
                   </div>
-                )
-              })}
-            </div>
-
-          </div>
+                 )
+               })}
+             </div>
+           </div>
         ))}
 
         {/* Step numbers */}
@@ -469,4 +500,32 @@ const styles = {
     color: 'var(--text-primary)',
     marginBottom: '16px',
   },
+  cell: {
+  width: '48px',
+  height: '40px',
+  borderRadius: '6px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  fontSize: '12px',
+  fontWeight: '700',
+  transition: 'all 0.15s ease',
+  flexShrink: 0,
+  userSelect: 'none',
+  position: 'relative',
+  zIndex: 1,
+},
+  wire: {
+  position: 'absolute',
+  top: '50%',
+  left: 0,
+  right: 0,
+  height: '1px',
+  background: 'linear-gradient(90deg, var(--accent) 0%, rgba(124,106,255,0.3) 100%)',
+  transform: 'translateY(-50%)',
+  zIndex: 0,
+  pointerEvents: 'none',
+},
 }
+

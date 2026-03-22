@@ -4,32 +4,138 @@
   padding: 0;
 }
 
+/* ── Typography Scale ─────────────────────────────── */
 :root {
-  --bg-primary:    #0a0a0f;
-  --bg-secondary:  #111118;
-  --bg-card:       #16161f;
-  --border:        #2a2a3a;
-  --accent:        #7c6aff;
-  --accent-glow:   #7c6aff33;
-  --accent-alt:    #00d4aa;
-  --text-primary:  #f0f0f8;
-  --text-secondary:#9090aa;
-  --gate-h:        #7c6aff;
-  --gate-x:        #ff6b6b;
-  --gate-z:        #ffd93d;
-  --gate-cnot:     #00d4aa;
-  --gate-y:        #ff9f43;
-  --gate-s:        #a29bfe;
-  --gate-t:        #fd79a8;
+  --font-display: -apple-system, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  --font-text:    -apple-system, 'SF Pro Text',    'Segoe UI', system-ui, sans-serif;
+
+  /* Gate colours — same in both themes */
+  --gate-h:    #7c6aff;
+  --gate-x:    #ff453a;
+  --gate-z:    #ffd60a;
+  --gate-cnot: #30d158;
+  --gate-y:    #ff9f0a;
+  --gate-s:    #bf5af2;
+  --gate-t:    #ff375f;
 }
 
+/* ── Dark Theme (default) ─────────────────────────── */
+[data-theme="dark"] {
+  --bg-primary:      #080808;
+  --bg-secondary:    #0f0f0f;
+  --bg-card:         #141414;
+  --bg-elevated:     #1c1c1e;
+  --border:          rgba(255, 255, 255, 0.06);
+  --border-hover:    rgba(255, 255, 255, 0.12);
+  --accent:          #7c6aff;
+  --accent-glow:     rgba(124, 106, 255, 0.15);
+  --accent-alt:      #30d158;
+  --text-primary:    #f5f5f7;
+  --text-secondary:  rgba(245, 245, 247, 0.5);
+  --text-tertiary:   rgba(245, 245, 247, 0.28);
+  --shadow:          0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-sm:       0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Light Theme ──────────────────────────────────── */
+[data-theme="light"] {
+  --bg-primary:      #f5f5f7;
+  --bg-secondary:    #ffffff;
+  --bg-card:         #ffffff;
+  --bg-elevated:     #f0f0f2;
+  --border:          rgba(0, 0, 0, 0.06);
+  --border-hover:    rgba(0, 0, 0, 0.12);
+  --accent:          #7c6aff;
+  --accent-glow:     rgba(124, 106, 255, 0.12);
+  --accent-alt:      #30d158;
+  --text-primary:    #1d1d1f;
+  --text-secondary:  rgba(29, 29, 31, 0.5);
+  --text-tertiary:   rgba(29, 29, 31, 0.28);
+  --shadow:          0 8px 32px rgba(0, 0, 0, 0.08);
+  --shadow-sm:       0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Base Styles ──────────────────────────────────── */
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-text);
+  font-size: 15px;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-primary); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+/* Display font for headings */
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* ── Scrollbar ────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 2px;
+}
+
+/* ── Tooltip System ───────────────────────────────── */
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-wrapper .tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--bg-elevated);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-hover);
+  border-radius: 10px;
+  padding: 10px 14px;
+  width: 170px;
+  text-align: center;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: var(--shadow);
+  z-index: 100;
+}
+
+.tooltip-wrapper .tooltip-title {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+
+.tooltip-wrapper .tooltip-desc {
+  font-family: var(--font-text);
+  font-size: 10px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.tooltip-wrapper:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.tooltip-wrapper .tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--bg-elevated);
+}
