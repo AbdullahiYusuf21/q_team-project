@@ -125,39 +125,83 @@ export default function CircuitBuilder() {
   }
 
   // ── Run simulation ─────────────────────────────────
-  async function handleRun() {
-    setLoading(true)
-    setError(null)
-    setResult(null)
-
-    const gates = []
-    for (let step = 0; step < STEPS; step++) {
-      for (let qubit = 0; qubit < nQubits; qubit++) {
-        const cell = grid[qubit][step]
-        if (!cell) continue
-        if (cell.gate === 'CNOT' && cell.role === 'control') {
-          gates.push({ gate: 'CNOT', control: qubit, target: cell.linkedQubit })
-        } else if (cell.gate !== 'CNOT') {
-          gates.push({ gate: cell.gate, target: qubit })
-        }
+  function buildGateList() {
+  const gates = []
+  for (let step = 0; step < STEPS; step++) {
+    for (let qubit = 0; qubit < nQubits; qubit++) {
+      const cell = grid[qubit][step]
+      if (!cell) continue
+      if (cell.gate === 'CNOT' && cell.role === 'control') {
+        gates.push({ gate: 'CNOT', control: qubit, target: cell.linkedQubit })
+      } else if (cell.gate === 'CNOT' && cell.role === 'target') {
+        continue  // skip — already added from control cell
+      } else {
+        gates.push({ gate: cell.gate, target: qubit })
       }
     }
-
-    if (gates.length === 0) {
-      setError('Place at least one gate before running.')
-      setLoading(false)
-      return
-    }
-
-    try {
-      const data = await simulateCircuit(nQubits, gates)
-      setResult(data)
-    } catch (err) {
-      setError('Backend error — make sure uvicorn is running on port 8000.')
-    } finally {
-      setLoading(false)
-    }
   }
+  return gates
+}
+
+// ── Run all gates at once ───────────────────────────
+async function handleRun() {
+  setLoading(true)
+  setError(null)
+  setResult(null)
+  setStepIndex(null)
+
+  const gates = buildGateList()
+
+  if (gates.length === 0) {
+    setError('Place at least one gate before running.')
+    setLoading(false)
+    return
+  }
+
+  try {
+    const data = await simulateCircuit(nQubits, gates)
+    setResult(data)
+  } catch (err) {
+    setError('Backend error — make sure uvicorn is running on port 8000.')
+  } finally {
+    setLoading(false)
+  }
+}
+
+// ── Step through one gate at a time ────────────────
+async function handleStepForward() {
+  const allGates = buildGateList()
+  
+
+  if (allGates.length === 0) {
+    setError('Place at least one gate before stepping.')
+    return
+  }
+
+  const nextStep = stepIndex === null ? 1 : stepIndex + 1
+  if (nextStep > allGates.length) return
+
+  setLoading(true)
+  setError(null)
+
+  try {
+    const data = await simulateCircuit(nQubits, allGates.slice(0, nextStep))
+    setResult(data)
+    setStepIndex(nextStep)
+  } catch (err) {
+    setError('Backend error — make sure uvicorn is running on port 8000.')
+  } finally {
+    setLoading(false)
+  }
+
+}
+
+// ── Reset step mode ─────────────────────────────────
+function handleStepReset() {
+  setStepIndex(null)
+  setResult(null)
+  setError(null)
+}
 
   // ── Cell appearance ────────────────────────────────
   function getCellStyle(qubit, step) {
@@ -248,10 +292,43 @@ export default function CircuitBuilder() {
             ))}
           </div>
         </div>
+        {/* Action buttons */}
         <div style={styles.actionBtns}>
           <button onClick={handleClear} style={styles.clearBtn}>
             Clear
           </button>
+
+          {/* Step controls — only show when there are gates placed */}
+          {buildGateList().length > 0 && (
+            <>
+              <button
+                onClick={handleStepReset}
+                disabled={stepIndex === null}
+                style={{
+                  ...styles.clearBtn,
+                  opacity: stepIndex === null ? 0.4 : 1,
+                  color: 'var(--accent)',
+                  borderColor: 'var(--accent)',
+                }}
+              >
+                ↺ Reset
+              </button>
+              <button
+                onClick={handleStepForward}
+                disabled={loading}
+                style={{
+                  ...styles.runBtn,
+                  background: 'transparent',
+                  border: '1px solid var(--accent)',
+                  color: 'var(--accent)',
+                  opacity: loading ? 0.6 : 1,
+                }}
+              >
+                Step →
+              </button>
+            </>
+          )}
+
           <button
             onClick={handleRun}
             disabled={loading}
@@ -291,6 +368,13 @@ export default function CircuitBuilder() {
           </span>
         )}
       </div>
+      {/* Step indicator */}
+      {stepIndex !== null && (
+          <div style={styles.stepIndicator}>
+            <div style={styles.stepIndicatorDot} />
+            Step {stepIndex} of {buildGateList().length} gates applied
+          </div>
+        )}
 
       {/* Circuit grid */}
       <div style={styles.gridWrapper}>
@@ -585,4 +669,20 @@ const styles = {
     marginBottom: '16px',
     letterSpacing: '-0.01em',
   },
+stepIndicator: {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px',
+  marginBottom: '12px',
+  fontSize: '12px',
+  color: 'var(--accent)',
+  fontFamily: 'var(--font-text)',
+},
+stepIndicatorDot: {
+  width: '6px',
+  height: '6px',
+  borderRadius: '50%',
+  background: 'var(--accent)',
+  animation: 'pulse 1.5s ease infinite',
+},
 }
