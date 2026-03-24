@@ -1,4 +1,4 @@
-import axios from 'axios'
+/*import axios from 'axios'
 
 // All communication with the FastAPI backend lives here.
 // Components never call axios directly — they call these functions.
@@ -15,4 +15,15 @@ export async function simulateCircuit(nQubits, gates) {
   })
   return response.data
   // returns { n_qubits, statevector, probabilities }
+}*/
+import axios from 'axios'
+
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+export async function simulateCircuit(nQubits, gates) {
+  const response = await axios.post(`${BASE_URL}/simulate`, {
+    n_qubits: nQubits,
+    gates: gates
+  })
+  return response.data
 }
