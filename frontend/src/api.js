@@ -27,3 +27,9 @@ export async function simulateCircuit(nQubits, gates) {
   })
   return response.data
 }
+export async function runDeutschJozsa(oracleType) {
+  const response = await axios.post(`${BASE_URL}/deutsch-jozsa`, {
+    oracle_type: oracleType
+  })
+  return response.data
+}

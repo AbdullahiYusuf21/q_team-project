@@ -142,3 +142,61 @@ def run_simulation(n_qubits: int, gates: list) -> dict:
         "statevector": statevector,
         "probabilities": probabilities
     }
+def deutsch_jozsa(oracle_type: str) -> dict:
+    """
+    Runs the Deutsch-Jozsa algorithm for a single-bit function.
+    
+    Circuit:
+      qubit 0 (input):  |0⟩ → H → Oracle → H → Measure
+      qubit 1 (ancilla): |1⟩ → H → Oracle
+    
+    oracle_type:
+      'constant_0' — f(x) = 0 always
+      'constant_1' — f(x) = 1 always  
+      'balanced'   — f(x) = x (returns input)
+    
+    Expected results:
+      constant → 100% |00⟩ or |10⟩ (first qubit is 0)
+      balanced → 100% |01⟩ or |11⟩ (first qubit is 1)
+    
+    We measure only qubit 0. If it's |0⟩ → constant. If |1⟩ → balanced.
+    """
+
+    # Step 1 — initialise |00⟩ then flip qubit 1 to get |01⟩
+    # qubit 1 is the ancilla, must start as |1⟩
+    gates_constant_0 = [
+        {"gate": "X",    "target": 1},  # ancilla to |1⟩
+        {"gate": "H",    "target": 0},  # input superposition
+        {"gate": "H",    "target": 1},  # ancilla superposition
+        # constant 0 oracle: do nothing (identity)
+        {"gate": "H",    "target": 0},  # final H on input
+    ]
+
+    gates_constant_1 = [
+        {"gate": "X",    "target": 1},  # ancilla to |1⟩
+        {"gate": "H",    "target": 0},  # input superposition
+        {"gate": "H",    "target": 1},  # ancilla superposition
+        # constant 1 oracle: flip ancilla (X on ancilla)
+        {"gate": "X",    "target": 1},
+        {"gate": "H",    "target": 0},  # final H on input
+    ]
+
+    gates_balanced = [
+        {"gate": "X",    "target": 1},  # ancilla to |1⟩
+        {"gate": "H",    "target": 0},  # input superposition
+        {"gate": "H",    "target": 1},  # ancilla superposition
+        # balanced oracle: CNOT with input as control, ancilla as target
+        {"gate": "CNOT", "control": 0, "target": 1},
+        {"gate": "H",    "target": 0},  # final H on input
+    ]
+
+    oracle_map = {
+        "constant_0": gates_constant_0,
+        "constant_1": gates_constant_1,
+        "balanced":   gates_balanced,
+    }
+
+    if oracle_type not in oracle_map:
+        raise ValueError(f"Unknown oracle type: '{oracle_type}'")
+
+    return run_simulation(2, oracle_map[oracle_type])

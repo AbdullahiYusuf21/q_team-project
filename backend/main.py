@@ -63,3 +63,19 @@ def simulate(request: SimulateRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
     return result
+class DeutschJozsaRequest(BaseModel):
+    oracle_type: str  # "constant_0", "constant_1", or "balanced"
+
+@app.post("/deutsch-jozsa")
+def run_deutsch_jozsa(request: DeutschJozsaRequest):
+    valid = ["constant_0", "constant_1", "balanced"]
+    if request.oracle_type not in valid:
+        raise HTTPException(
+            status_code=400,
+            detail=f"oracle_type must be one of {valid}"
+        )
+    try:
+        result = engine.deutsch_jozsa(request.oracle_type)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return result
