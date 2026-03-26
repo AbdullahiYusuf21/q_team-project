@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { runDeutschJozsa } from '../api'
 import ProbabilityChart from './ProbabilityChart'
+import { runDeutschJozsa, runGrover } from '../api'
 
 // ─────────────────────────────────────────────────────
 // ALGORITHM PANEL
@@ -43,6 +44,28 @@ const DJ_STEPS = [
     explanation: 'If qubit 0 collapses to |0⟩ → function is constant. If it collapses to |1⟩ → function is balanced. One query. Classically you need two.',
   },
 ]
+const GROVER_STEPS = [
+  {
+    gate: 'Superposition',
+    title: 'Equal Superposition',
+    explanation: 'H applied to all qubits. Every basis state |00⟩, |01⟩, |10⟩, |11⟩ gets equal amplitude 1/2. Probability of each is 25% — a completely random starting point.',
+  },
+  {
+    gate: 'Oracle',
+    title: 'Oracle — Phase Flip',
+    explanation: 'The oracle knows the target. It flips the phase of the target state from +amplitude to -amplitude. This is invisible to measurement but encodes the answer as a phase difference.',
+  },
+  {
+    gate: 'Diffusion',
+    title: 'Diffusion — Amplitude Amplification',
+    explanation: 'The diffusion operator inverts all amplitudes about their average. The target\'s negative amplitude gets amplified to near 1.0 while all others shrink toward 0. One iteration gives ~100% on the target.',
+  },
+  {
+    gate: 'Measure',
+    title: 'Measurement',
+    explanation: 'Measuring now collapses to the target state with near 100% probability. Classically you\'d need on average N/2 = 2 queries. Grover\'s needed 1 — quadratic speedup demonstrated.',
+  },
+]
 
 export default function AlgorithmPanel() {
   const [activeAlgorithm, setActiveAlgorithm] = useState('deutsch-jozsa')
@@ -51,6 +74,10 @@ export default function AlgorithmPanel() {
   const [loading,         setLoading]         = useState(false)
   const [error,           setError]           = useState(null)
   const [activeStep,      setActiveStep]      = useState(null)
+  const [groverTarget,  setGroverTarget]  = useState('11')
+  const [groverResult,  setGroverResult]  = useState(null)
+  const [groverLoading, setGroverLoading] = useState(false)
+  const [groverError,   setGroverError]   = useState(null)
 
   // ── Run Deutsch-Jozsa ────────────────────────────
   async function handleRunDJ() {
@@ -81,7 +108,20 @@ export default function AlgorithmPanel() {
     if (qubit0is1 > 0.99) return 'balanced'
     return null
   }
+  async function handleRunGrover() {
+  setGroverLoading(true)
+  setGroverError(null)
+  setGroverResult(null)
 
+  try {
+    const data = await runGrover(groverTarget)
+    setGroverResult(data)
+  } catch (err) {
+    setGroverError('Backend error — make sure the server is running.')
+  } finally {
+    setGroverLoading(false)
+  }
+}
   const verdict = result ? getVerdict(result.probabilities) : null
 
   // ── Circuit diagram for Deutsch-Jozsa ────────────

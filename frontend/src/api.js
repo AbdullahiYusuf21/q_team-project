@@ -32,4 +32,11 @@ export async function runDeutschJozsa(oracleType) {
     oracle_type: oracleType
   })
   return response.data
+
+}
+export async function runGrover(target) {
+  const response = await axios.post(`${BASE_URL}/grover`, {
+    target: target
+  })
+  return response.data
 }

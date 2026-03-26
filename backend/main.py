@@ -79,3 +79,19 @@ def run_deutsch_jozsa(request: DeutschJozsaRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return result
+class GroverRequest(BaseModel):
+    target: str  # "00", "01", "10", or "11"
+
+@app.post("/grover")
+def run_grover(request: GroverRequest):
+    valid = ["00", "01", "10", "11"]
+    if request.target not in valid:
+        raise HTTPException(
+            status_code=400,
+            detail=f"target must be one of {valid}"
+        )
+    try:
+        result = engine.grover_search(request.target)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return result

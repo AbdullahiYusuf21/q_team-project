@@ -200,3 +200,84 @@ def deutsch_jozsa(oracle_type: str) -> dict:
         raise ValueError(f"Unknown oracle type: '{oracle_type}'")
 
     return run_simulation(2, oracle_map[oracle_type])
+def grover_search(target: str) -> dict:
+    """
+    Runs Grover's search algorithm on a 2-qubit system.
+    
+    target: the basis state to search for
+      '00', '01', '10', or '11'
+    
+    The algorithm amplifies the target state's probability
+    from 25% (random guess) to ~100% in one iteration.
+    
+    Circuit structure:
+      1. H on all qubits — equal superposition
+      2. Oracle — phase flip on target state
+      3. Diffusion operator — amplitude amplification
+    
+    Expected result: ~100% probability on target state
+    """
+
+    n_qubits = 2
+
+    # ── Step 1: Superposition ──────────────────────────
+    # H on all qubits creates equal superposition of all
+    # 4 basis states, each with amplitude 1/2 (probability 25%)
+    gates = [
+        {"gate": "H", "target": 0},
+        {"gate": "H", "target": 1},
+    ]
+
+    # ── Step 2: Oracle ─────────────────────────────────
+    # The oracle flips the phase of the target state.
+    # Different targets need different phase flip circuits.
+    #
+    # For |11⟩: CZ gate (Z on both qubits controlled on each other)
+    #   Implemented as: CNOT + Z pattern
+    # For |00⟩: X both qubits, apply |11⟩ oracle, X both back
+    # For |01⟩: X qubit 0, apply |11⟩ oracle, X qubit 0 back
+    # For |10⟩: X qubit 1, apply |11⟩ oracle, X qubit 1 back
+    #
+    # The X gates flip |0⟩ to |1⟩ so the |11⟩ oracle
+    # fires on what was originally the target state.
+
+    # For all targets, we use X gates to remap to |11⟩ oracle
+    if target[0] == '0':
+        gates.append({"gate": "X", "target": 0})
+    if target[1] == '0':
+        gates.append({"gate": "X", "target": 1})
+
+    # CZ oracle for |11⟩ — implemented as H + CNOT + H
+    # This is equivalent to a controlled-Z gate
+    gates += [
+        {"gate": "H",    "target": 1},
+        {"gate": "CNOT", "control": 0, "target": 1},
+        {"gate": "H",    "target": 1},
+    ]
+
+    # Undo the X flips
+    if target[0] == '0':
+        gates.append({"gate": "X", "target": 0})
+    if target[1] == '0':
+        gates.append({"gate": "X", "target": 1})
+
+    # ── Step 3: Diffusion operator ─────────────────────
+    # Also called the Grover diffusion or inversion about mean.
+    # It amplifies the marked state and suppresses all others.
+    #
+    # Circuit: H ⊗ H → X ⊗ X → CZ → X ⊗ X → H ⊗ H
+    gates += [
+        {"gate": "H",    "target": 0},
+        {"gate": "H",    "target": 1},
+        {"gate": "X",    "target": 0},
+        {"gate": "X",    "target": 1},
+        {"gate": "H",    "target": 1},
+        {"gate": "CNOT", "control": 0, "target": 1},
+        {"gate": "H",    "target": 1},
+        {"gate": "X",    "target": 0},
+        {"gate": "X",    "target": 1},
+        {"gate": "H",    "target": 0},
+        {"gate": "H",    "target": 1},
+    ]
+
+    return run_simulation(n_qubits, gates)
