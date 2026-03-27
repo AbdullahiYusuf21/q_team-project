@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { runDeutschJozsa } from '../api'
 import ProbabilityChart from './ProbabilityChart'
 import { runDeutschJozsa, runGrover } from '../api'
 
@@ -73,7 +72,8 @@ export default function AlgorithmPanel() {
   const [result,          setResult]          = useState(null)
   const [loading,         setLoading]         = useState(false)
   const [error,           setError]           = useState(null)
-  const [activeStep,      setActiveStep]      = useState(null)
+  const [djActiveStep,     setdjActiveStep]     = useState(null)
+  const [groverActiveStep, setGroverActiveStep] = useState(null)
   const [groverTarget,  setGroverTarget]  = useState('11')
   const [groverResult,  setGroverResult]  = useState(null)
   const [groverLoading, setGroverLoading] = useState(false)
@@ -84,7 +84,7 @@ export default function AlgorithmPanel() {
     setLoading(true)
     setError(null)
     setResult(null)
-    setActiveStep(null)
+    setdjActiveStep(null)
 
     try {
       const data = await runDeutschJozsa(oracleType)
@@ -180,7 +180,7 @@ export default function AlgorithmPanel() {
               setActiveAlgorithm(algo.id)
               setResult(null)
               setError(null)
-              setActiveStep(null)
+              setdjActiveStep(null)
             }}
             style={{
               ...styles.algoTab,
@@ -231,7 +231,7 @@ export default function AlgorithmPanel() {
                   onClick={() => {
                     setOracleType(o.id)
                     setResult(null)
-                    setActiveStep(null)
+                    setdjActiveStep(null)
                   }}
                   style={{
                     ...styles.oracleBtn,
@@ -257,10 +257,10 @@ export default function AlgorithmPanel() {
               {DJ_STEPS.map((step, i) => (
                 <div
                   key={i}
-                  onClick={() => setActiveStep(activeStep === i ? null : i)}
+                  onClick={() => setdjActiveStep(djActiveStep === i ? null : i)}
                   style={{
                     ...styles.stepPill,
-                    ...(activeStep === i ? styles.stepPillActive : {})
+                    ...(djActiveStep === i ? styles.stepPillActive : {})
                   }}
                 >
                   <span style={styles.stepNumber}>{i + 1}</span>
@@ -268,13 +268,13 @@ export default function AlgorithmPanel() {
                 </div>
               ))}
             </div>
-            {activeStep !== null && (
+            {djActiveStep !== null && (
               <div style={styles.stepExplanation}>
                 <div style={styles.stepExplanationTitle}>
-                  {DJ_STEPS[activeStep].title}
+                  {DJ_STEPS[djActiveStep].title}
                 </div>
                 <div style={styles.stepExplanationText}>
-                  {DJ_STEPS[activeStep].explanation}
+                  {DJ_STEPS[djActiveStep].explanation}
                 </div>
               </div>
             )}
@@ -333,14 +333,160 @@ export default function AlgorithmPanel() {
       {/* ── Grover's Panel (placeholder) ── */}
       {activeAlgorithm === 'grover' && (
         <div style={styles.panel}>
+
+          {/* Description */}
           <div style={styles.descriptionCard}>
-            <h3 style={styles.cardTitle}>Coming Soon</h3>
+            <h3 style={styles.cardTitle}>The Problem</h3>
             <p style={styles.cardText}>
-              Grover's search algorithm — quadratic speedup for unstructured search.
+              Given an unsorted list of <strong>4 items</strong>, find the marked one.
+              Classically this takes on average 2 queries. Grover's algorithm
+              finds it in <strong>1 iteration</strong> — a quadratic speedup.
             </p>
+            <div style={styles.advantageRow}>
+            <div style={styles.advantageItem}>
+              <span style={styles.advantageLabel}>Classical</span>
+              <span style={styles.advantageValue}>2 queries</span>
+            </div>
+            <div style={styles.advantageDivider}>vs</div>
+            <div style={styles.advantageItem}>
+              <span style={styles.advantageLabel}>Quantum</span>
+              <span style={styles.advantageValue}>1 query</span>
+            </div>
           </div>
         </div>
-      )}
+
+        {/* Target selector */}
+        <div style={styles.configRow}>
+          <span style={styles.configLabel}>Search Target</span>
+          <div style={styles.oracleBtns}>
+            {['00', '01', '10', '11'].map(t => (
+              <button
+                key={t}
+                onClick={() => {
+                  setGroverTarget(t)
+                  setGroverResult(null)
+                  setGroverActiveStep(null)
+                }}
+                style={{
+                  ...styles.oracleBtn,
+                  ...(groverTarget === t ? styles.oracleBtnActive : {})
+                }}
+              >
+                |{t}⟩
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Circuit diagram */}
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>Circuit</h3>
+          <div style={styles.circuitDiagram}>
+            <div style={styles.circuitRow}>
+              <span style={styles.qubitLabel}>|q₀⟩</span>
+              <div style={styles.wire} />
+              <div style={styles.gateBox('#7c6aff')}>H</div>
+              <div style={styles.wire} />
+              <div style={styles.gateBox('#ff9f0a')}>Oracle</div>
+              <div style={styles.wire} />
+              <div style={styles.gateBox('#30d158')}>Diffuse</div>
+              <div style={styles.wire} />
+              <div style={styles.measureBox}>M</div>
+            </div>
+            <div style={styles.circuitRow}>
+              <span style={styles.qubitLabel}>|q₁⟩</span>
+              <div style={styles.wire} />
+              <div style={styles.gateBox('#7c6aff')}>H</div>
+              <div style={styles.wire} />
+              <div style={styles.gateBox('#ff9f0a')}>Oracle</div>
+              <div style={styles.wire} />
+              <div style={styles.gateBox('#30d158')}>Diffuse</div>
+              <div style={styles.wire} />
+              <div style={styles.measureBox}>M</div>
+            </div>
+            <div style={{
+              marginTop: '12px',
+              padding: '8px 12px',
+              background: 'var(--accent-glow)',
+              borderRadius: '8px',
+              border: '1px solid var(--accent)',
+              fontSize: '12px',
+              color: 'var(--accent)',
+              fontFamily: 'var(--font-text)',
+            }}>
+              Searching for: |{groverTarget}⟩
+            </div>
+          </div>
+        </div>
+
+        {/* Step walkthrough */}
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>How It Works</h3>
+          <div style={styles.stepsRow}>
+            {GROVER_STEPS.map((step, i) => (
+              <div
+                key={i}
+                onClick={() => setGroverActiveStep(groverActiveStep === i ? null : i)}
+                style={{
+                  ...styles.stepPill,
+                  ...(groverActiveStep === i ? styles.stepPillActive : {})
+                }}
+              >
+                <span style={styles.stepNumber}>{i + 1}</span>
+                {step.gate}
+              </div>
+            ))}
+          </div>
+          {groverActiveStep !== null && (
+            <div style={styles.stepExplanation}>
+              <div style={styles.stepExplanationTitle}>
+                {GROVER_STEPS[groverActiveStep].title}
+              </div>
+              <div style={styles.stepExplanationText}>
+                {GROVER_STEPS[groverActiveStep].explanation}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Run button */}
+        <button
+          onClick={handleRunGrover}
+          disabled={groverLoading}
+          style={{ ...styles.runBtn, opacity: groverLoading ? 0.6 : 1 }}
+        >
+          {groverLoading ? 'Searching...' : `▶ Search for |${groverTarget}⟩`}
+        </button>
+
+        {/* Error */}
+        {groverError && <div style={styles.error}>{groverError}</div>}
+
+        {/* Result */}
+        {groverResult && (
+          <div style={styles.resultSection}>
+            <div style={{
+              ...styles.verdictBanner,
+              background: 'rgba(48, 209, 88, 0.1)',
+              borderColor: 'rgba(48, 209, 88, 0.3)',
+            }}>
+              <span style={styles.verdictIcon}>🎯</span>
+              <div>
+                <div style={styles.verdictTitle}>
+                  Target |{groverTarget}⟩ Found
+                </div>
+                <div style={styles.verdictSubtitle}>
+                  Amplitude amplification collapsed to target with ~100% probability.
+                  Quadratic speedup over classical search demonstrated.
+                </div>
+              </div>
+            </div>
+            <h3 style={styles.sectionTitle}>Measurement Probabilities</h3>
+            <ProbabilityChart probabilities={groverResult.probabilities} />
+          </div>
+        )}
+
+      </div>
+    )}
 
     </div>
   )
