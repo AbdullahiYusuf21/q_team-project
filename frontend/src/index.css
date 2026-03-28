@@ -4,12 +4,13 @@
   padding: 0;
 }
 
-/* ── Typography Scale ─────────────────────────────── */
+/* ── Fonts ────────────────────────────────────────── */
 :root {
   --font-display: -apple-system, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
   --font-text:    -apple-system, 'SF Pro Text',    'Segoe UI', system-ui, sans-serif;
+  --font-mono:    'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
 
-  /* Gate colours — same in both themes */
+  /* Gate colours — consistent across themes */
   --gate-h:    #7c6aff;
   --gate-x:    #ff453a;
   --gate-z:    #ffd60a;
@@ -19,43 +20,45 @@
   --gate-t:    #ff375f;
 }
 
-/* ── Dark Theme (default) ─────────────────────────── */
+/* ── Dark Theme ───────────────────────────────────── */
 [data-theme="dark"] {
-  --bg-primary:      #080808;
-  --bg-secondary:    #0f0f0f;
-  --bg-card:         #141414;
-  --bg-elevated:     #1c1c1e;
-  --border:          rgba(255, 255, 255, 0.06);
-  --border-hover:    rgba(255, 255, 255, 0.12);
-  --accent:          #7c6aff;
-  --accent-glow:     rgba(124, 106, 255, 0.15);
-  --accent-alt:      #30d158;
-  --text-primary:    #f5f5f7;
-  --text-secondary:  rgba(245, 245, 247, 0.5);
-  --text-tertiary:   rgba(245, 245, 247, 0.28);
-  --shadow:          0 8px 32px rgba(0, 0, 0, 0.4);
-  --shadow-sm:       0 2px 8px rgba(0, 0, 0, 0.3);
+  --bg-primary:     #050508;
+  --bg-secondary:   #0a0a0f;
+  --bg-card:        #0f0f18;
+  --bg-elevated:    #14141f;
+  --border:         rgba(124, 106, 255, 0.08);
+  --border-hover:   rgba(124, 106, 255, 0.2);
+  --accent:         #7c6aff;
+  --accent-glow:    rgba(124, 106, 255, 0.12);
+  --accent-alt:     #30d158;
+  --text-primary:   #f0f0ff;
+  --text-secondary: rgba(240, 240, 255, 0.45);
+  --text-tertiary:  rgba(240, 240, 255, 0.2);
+  --shadow:         0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-sm:      0 2px 8px rgba(0, 0, 0, 0.4);
+  --quantum-glow:   0 0 20px rgba(124, 106, 255, 0.15);
 }
 
 /* ── Light Theme ──────────────────────────────────── */
 [data-theme="light"] {
-  --bg-primary:      #f5f5f7;
-  --bg-secondary:    #ffffff;
-  --bg-card:         #ffffff;
-  --bg-elevated:     #f0f0f2;
-  --border:          rgba(0, 0, 0, 0.06);
-  --border-hover:    rgba(0, 0, 0, 0.12);
-  --accent:          #7c6aff;
-  --accent-glow:     rgba(124, 106, 255, 0.12);
-  --accent-alt:      #30d158;
-  --text-primary:    #1d1d1f;
-  --text-secondary:  rgba(29, 29, 31, 0.5);
-  --text-tertiary:   rgba(29, 29, 31, 0.28);
-  --shadow:          0 8px 32px rgba(0, 0, 0, 0.08);
-  --shadow-sm:       0 2px 8px rgba(0, 0, 0, 0.06);
+  --bg-primary:     #f0f0f8;
+  --bg-secondary:   #ffffff;
+  --bg-card:        #ffffff;
+  --bg-elevated:    #f5f5ff;
+  --border:         rgba(124, 106, 255, 0.12);
+  --border-hover:   rgba(124, 106, 255, 0.25);
+  --accent:         #6054e8;
+  --accent-glow:    rgba(96, 84, 232, 0.1);
+  --accent-alt:     #28b84a;
+  --text-primary:   #0a0a1a;
+  --text-secondary: rgba(10, 10, 26, 0.5);
+  --text-tertiary:  rgba(10, 10, 26, 0.28);
+  --shadow:         0 8px 32px rgba(96, 84, 232, 0.08);
+  --shadow-sm:      0 2px 8px rgba(96, 84, 232, 0.06);
+  --quantum-glow:   0 0 20px rgba(96, 84, 232, 0.08);
 }
 
-/* ── Base Styles ──────────────────────────────────── */
+/* ── Base ─────────────────────────────────────────── */
 body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
@@ -64,10 +67,14 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.4s ease, color 0.4s ease;
+  /* Quantum grid background texture */
+  background-image:
+    linear-gradient(rgba(124, 106, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 106, 255, 0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-/* Display font for headings */
 h1, h2, h3, h4 {
   font-family: var(--font-display);
   letter-spacing: -0.02em;
@@ -81,7 +88,50 @@ h1, h2, h3, h4 {
   border-radius: 2px;
 }
 
-/* ── Tooltip System ───────────────────────────────── */
+/* ── Quantum wire animation ───────────────────────── */
+@keyframes wirePulse {
+  0%   { opacity: 0.3; }
+  50%  { opacity: 0.8; }
+  100% { opacity: 0.3; }
+}
+
+@keyframes gateGlow {
+  0%   { box-shadow: 0 0 0px transparent; }
+  50%  { box-shadow: 0 0 8px var(--accent); }
+  100% { box-shadow: 0 0 0px transparent; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1;   transform: scale(1);   }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+@keyframes probabilityFill {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+@keyframes scanLine {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%);  }
+}
+
+@keyframes quantumFloat {
+  0%, 100% { transform: translateY(0px);   }
+  50%       { transform: translateY(-4px);  }
+}
+
+/* ── Fade slide up — applied to result panels ─────── */
+.fade-slide-up {
+  animation: fadeSlideUp 0.3s ease forwards;
+}
+
+/* ── Tooltip ──────────────────────────────────────── */
 .tooltip-wrapper {
   position: relative;
   display: inline-block;
@@ -139,7 +189,59 @@ h1, h2, h3, h4 {
   border: 5px solid transparent;
   border-top-color: var(--bg-elevated);
 }
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.5; transform: scale(0.8); }
+
+/* ── Quantum gate cell hover ──────────────────────── */
+.gate-cell:hover {
+  filter: brightness(1.2);
+  transform: scale(1.05);
+  transition: all 0.1s ease;
+}
+
+/* ── Animated wire ────────────────────────────────── */
+.quantum-wire {
+  position: relative;
+  overflow: hidden;
+}
+
+.quantum-wire::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(124, 106, 255, 0.6),
+    transparent
+  );
+  animation: scanLine 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── Qubit label monospace ────────────────────────── */
+.qubit-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+/* ── State vector display ─────────────────────────── */
+.state-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+/* ── Verdict banner animation ─────────────────────── */
+.verdict-appear {
+  animation: fadeSlideUp 0.4s ease forwards;
+}
+
+/* ── Probability bar animation ────────────────────── */
+.prob-bar {
+  transform-origin: bottom;
+  animation: probabilityFill 0.6s ease forwards;
 }

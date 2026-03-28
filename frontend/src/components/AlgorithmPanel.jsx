@@ -294,7 +294,7 @@ export default function AlgorithmPanel() {
 
           {/* Result */}
           {result && (
-            <div style={styles.resultSection}>
+            <div className="fade-slide-up" style={styles.resultSection}>
 
               {/* Verdict banner */}
               <div style={{
@@ -463,7 +463,7 @@ export default function AlgorithmPanel() {
 
         {/* Result */}
         {groverResult && (
-          <div style={styles.resultSection}>
+          <div className="fade-slide-up"  style={styles.resultSection}>
             <div style={{
               ...styles.verdictBanner,
               background: 'rgba(48, 209, 88, 0.1)',

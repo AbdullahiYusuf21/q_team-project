@@ -412,7 +412,7 @@ function handleStepReset() {
         {Array.from({ length: nQubits }, (_, qubit) => (
           <div key={qubit} style={styles.qubitRow}>
             <div style={styles.qubitLabel}>|q{qubit}⟩</div>
-            <div style={styles.wireRow}>
+            <div style={styles.wireRow} className="quantum-wire">
               <div style={styles.wire} />
               {Array.from({ length: STEPS }, (_, step) => {
                 const { bg, border, color, label } = getCellStyle(qubit, step)
@@ -420,6 +420,7 @@ function handleStepReset() {
                   <div
                     key={step}
                     onClick={() => handleCellClick(qubit, step)}
+                    className="gate-cell"
                     style={{
                       ...styles.cell,
                       background: bg,
@@ -617,6 +618,7 @@ const styles = {
     transform: 'translateY(-50%)',
     zIndex: 0,
     pointerEvents: 'none',
+    overflow: 'hidden',
   },
   cell: {
     width: `${CELL_WIDTH}px`,
