@@ -229,7 +229,175 @@ function QuantumBackground() {
               dur={dur} repeatCount="indefinite" />
           </circle>
         ))}
+        {/* ── Floating triangles ── */}
+        {/* Each triangle is an SVG polygon with slow rotation and fade animation */}
 
+        {/* Large outline triangle — top left region */}
+        <polygon
+          points="80,60 140,160 20,160"
+          fill="none"
+          stroke="#7c6aff"
+          strokeWidth="0.8"
+          strokeOpacity="0.25"
+        >
+          <animate attributeName="stroke-opacity"
+            values="0.25;0.08;0.25" dur="7s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform"
+            type="rotate" from="0 80 110" to="360 80 110"
+            dur="30s" repeatCount="indefinite" />
+        </polygon>
+
+        {/* Small filled triangle — top left */}
+        <polygon
+          points="60,20 75,45 45,45"
+          fill="#7c6aff"
+          fillOpacity="0.15"
+        >
+          <animate attributeName="fill-opacity"
+            values="0.15;0.04;0.15" dur="5s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform"
+            type="rotate" from="0 60 32" to="-360 60 32"
+            dur="20s" repeatCount="indefinite" />
+        </polygon>
+
+        {/* Large outline triangle — top right */}
+        <polygon
+          points="1380,40 1440,150 1320,150"
+          fill="none"
+          stroke="#30d158"
+          strokeWidth="0.8"
+          strokeOpacity="0.2"
+        >
+          <animate attributeName="stroke-opacity"
+            values="0.2;0.06;0.2" dur="9s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform"
+            type="rotate" from="0 1380 95" to="360 1380 95"
+            dur="25s" repeatCount="indefinite" />
+        </polygon>
+
+        {/* Small filled triangle — top right */}
+        <polygon
+          points="1420,200 1440,235 1400,235"
+          fill="#30d158"
+          fillOpacity="0.12"
+        >
+          <animate attributeName="fill-opacity"
+            values="0.12;0.04;0.12" dur="6s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform"
+            type="rotate" from="0 1420 217" to="-360 1420 217"
+            dur="18s" repeatCount="indefinite" />
+        </polygon>
+
+        {/* Medium outline triangle — bottom left */}
+        <polygon
+          points="50,780 120,900 -20,900"
+          fill="none"
+          stroke="#bf5af2"
+          strokeWidth="0.8"
+          strokeOpacity="0.2"
+        >
+          <animate attributeName="stroke-opacity"
+            values="0.2;0.06;0.2" dur="8s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform"
+            type="rotate" from="0 50 840" to="360 50 840"
+            dur="22s" repeatCount="indefinite" />
+        </polygon>
+
+        {/* Small filled triangle — bottom left */}
+        <polygon
+          points="180,820 205,865 155,865"
+          fill="#bf5af2"
+          fillOpacity="0.12"
+        >
+          <animate attributeName="fill-opacity"
+            values="0.12;0.04;0.12" dur="7s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform"
+            type="rotate" from="0 180 842" to="-360 180 842"
+            dur="16s" repeatCount="indefinite" />
+        </polygon>
+
+        {/* Large outline triangle — bottom right */}
+        <polygon
+          points="1350,750 1440,900 1260,900"
+          fill="none"
+          stroke="#7c6aff"
+          strokeWidth="0.8"
+          strokeOpacity="0.2"
+        >
+          <animate attributeName="stroke-opacity"
+            values="0.2;0.06;0.2" dur="10s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform"
+            type="rotate" from="0 1350 825" to="360 1350 825"
+            dur="28s" repeatCount="indefinite" />
+        </polygon>
+
+        {/* Small filled triangle — bottom right */}
+        <polygon
+          points="1200,800 1225,845 1175,845"
+          fill="#ff9f0a"
+          fillOpacity="0.15"
+        >
+          <animate attributeName="fill-opacity"
+            values="0.15;0.04;0.15" dur="6s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform"
+            type="rotate" from="0 1200 822" to="-360 1200 822"
+            dur="14s" repeatCount="indefinite" />
+        </polygon>
+
+        {/* Mid-screen scattered triangles */}
+        <polygon
+          points="550,50 575,95 525,95"
+          fill="none"
+          stroke="#ff9f0a"
+          strokeWidth="0.6"
+          strokeOpacity="0.18"
+        >
+          <animate attributeName="stroke-opacity"
+            values="0.18;0.05;0.18" dur="8s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform"
+            type="rotate" from="0 550 72" to="360 550 72"
+            dur="24s" repeatCount="indefinite" />
+        </polygon>
+
+        <polygon
+          points="850,820 870,858 830,858"
+          fill="none"
+          stroke="#30d158"
+          strokeWidth="0.6"
+          strokeOpacity="0.18"
+        >
+          <animate attributeName="stroke-opacity"
+            values="0.18;0.05;0.18" dur="11s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform"
+            type="rotate" from="0 850 839" to="-360 850 839"
+            dur="19s" repeatCount="indefinite" />
+        </polygon>
+
+        <polygon
+          points="1100,480 1125,525 1075,525"
+          fill="none"
+          stroke="#bf5af2"
+          strokeWidth="0.6"
+          strokeOpacity="0.15"
+        >
+          <animate attributeName="stroke-opacity"
+            values="0.15;0.04;0.15" dur="9s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform"
+            type="rotate" from="0 1100 502" to="360 1100 502"
+            dur="21s" repeatCount="indefinite" />
+        </polygon>
+
+        <polygon
+          points="300,500 320,538 280,538"
+          fill="#7c6aff"
+          fillOpacity="0.1"
+        >
+          <animate attributeName="fill-opacity"
+            values="0.1;0.03;0.1" dur="10s" repeatCount="indefinite" />
+          <animateTransform attributeName="transform"
+            type="rotate" from="0 300 519" to="-360 300 519"
+            dur="17s" repeatCount="indefinite" />
+        </polygon>
       </svg>
     </div>
   )
