@@ -95,3 +95,58 @@ def run_grover(request: GroverRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return result
+class BlochRequest(BaseModel):
+    gates: List[GateInstruction]
+
+@app.post("/bloch")
+def get_bloch_state(request: BlochRequest):
+    """
+    Simulates a single qubit circuit and returns the
+    Bloch sphere coordinates for the resulting state.
+    
+    Converts state vector amplitudes to spherical coordinates:
+    θ = 2 * arccos(|α|)
+    φ = arg(β) - arg(α)
+    Then to Cartesian: x = sin(θ)cos(φ), y = sin(θ)sin(φ), z = cos(θ)
+    """
+    gate_list = [g.dict() for g in request.gates]
+
+    try:
+        result = engine.run_simulation(1, gate_list)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Extract complex amplitudes from statevector
+    sv = result["statevector"]
+    alpha = complex(sv[0]["real"], sv[0]["imag"])  # |0⟩ amplitude
+    beta  = complex(sv[1]["real"], sv[1]["imag"])  # |1⟩ amplitude
+
+    import numpy as np
+    import cmath
+
+    # Convert to Bloch sphere spherical coordinates
+    theta = 2 * np.arccos(min(abs(alpha), 1.0))
+    phi   = (cmath.phase(beta) - cmath.phase(alpha)) if abs(beta) > 1e-10 else 0.0
+
+    # Convert to Cartesian coordinates
+    x = float(np.sin(theta) * np.cos(phi))
+    y = float(np.sin(theta) * np.sin(phi))
+    z = float(np.cos(theta))
+
+    # Determine state label
+    def get_state_label(x, y, z):
+        if   z >  0.99: return "|0⟩"
+        elif z < -0.99: return "|1⟩"
+        elif abs(x - 1) < 0.01: return "|+⟩"
+        elif abs(x + 1) < 0.01: return "|−⟩"
+        elif abs(y - 1) < 0.01: return "|i⟩"
+        elif abs(y + 1) < 0.01: return "|-i⟩"
+        else: return "|ψ⟩"
+
+    return {
+        "x": x, "y": y, "z": z,
+        "theta": float(theta),
+        "phi":   float(phi),
+        "label": get_state_label(x, y, z),
+        "probabilities": result["probabilities"]
+    }

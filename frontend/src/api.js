@@ -40,3 +40,9 @@ export async function runGrover(target) {
   })
   return response.data
 }
+export async function getBlochState(gates) {
+  const response = await axios.post(`${BASE_URL}/bloch`, {
+    gates: gates
+  })
+  return response.data
+}
