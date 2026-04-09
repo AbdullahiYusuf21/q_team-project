@@ -1,191 +1,190 @@
-import { useEffect, useRef, useState } from 'react'
-import * as THREE from 'three'
+import { useState } from 'react'
 import { getBlochState } from '../api'
-
-// ─────────────────────────────────────────────────────
-// BLOCH SPHERE — Three.js visualization of a single
-// qubit state. The state vector is shown as an arrow
-// from the centre of the sphere to its surface.
-//
-// Gate sequence builds up one gate at a time.
-// Each gate application animates the arrow to its
-// new position using linear interpolation (lerp).
-// ─────────────────────────────────────────────────────
 
 const GATES = [
   { id: 'H', label: 'H', color: '#7c6aff', desc: 'Hadamard — superposition' },
-  { id: 'X', label: 'X', color: '#ff453a', desc: 'Pauli-X — bit flip'       },
-  { id: 'Y', label: 'Y', color: '#ff9f0a', desc: 'Pauli-Y — bit + phase flip'},
-  { id: 'Z', label: 'Z', color: '#ffd60a', desc: 'Pauli-Z — phase flip'     },
-  { id: 'S', label: 'S', color: '#bf5af2', desc: 'S Gate — 90° phase'       },
-  { id: 'T', label: 'T', color: '#ff375f', desc: 'T Gate — 45° phase'       },
+  { id: 'X', label: 'X', color: '#ff453a', desc: 'Pauli-X — bit flip' },
+  { id: 'Y', label: 'Y', color: '#ff9f0a', desc: 'Pauli-Y — bit + phase flip' },
+  { id: 'Z', label: 'Z', color: '#ffd60a', desc: 'Pauli-Z — phase flip' },
+  { id: 'S', label: 'S', color: '#bf5af2', desc: 'S Gate — 90° phase' },
+  { id: 'T', label: 'T', color: '#ff375f', desc: 'T Gate — 45° phase' },
 ]
 
-// Known state labels and their Bloch coordinates
-const STATE_LABELS = [
-  { label: '|0⟩',  x:  0, y:  0, z:  1  },
-  { label: '|1⟩',  x:  0, y:  0, z: -1  },
-  { label: '|+⟩',  x:  1, y:  0, z:  0  },
-  { label: '|−⟩',  x: -1, y:  0, z:  0  },
-  { label: '|i⟩',  x:  0, y:  1, z:  0  },
-  { label: '|-i⟩', x:  0, y: -1, z:  0  },
-]
+// Projects 3D Bloch coordinates onto 2D SVG
+// Uses a simple isometric-style projection
+// x3d, y3d, z3d are Bloch sphere coordinates
+// Returns {x, y} SVG coordinates
+function project(x3d, y3d, z3d, cx, cy, r) {
+  // Rotate slightly for 3D feel
+  const angle = Math.PI / 6  // 30 degrees
+  const cosA  = Math.cos(angle)
+  const sinA  = Math.sin(angle)
+
+  // Apply y-axis rotation for isometric view
+  const rx = x3d * cosA - y3d * sinA
+  const rz = z3d
+
+  return {
+    x: cx + rx * r,
+    y: cy - rz * r,
+  }
+}
+
+function BlochSVG({ blochX, blochY, blochZ }) {
+  const cx = 200  // centre x
+  const cy = 200  // centre y
+  const r  = 140  // sphere radius
+
+  // Project key points
+  const north  = project(0,  0,  1, cx, cy, r)
+  const south  = project(0,  0, -1, cx, cy, r)
+  const front  = project(1,  0,  0, cx, cy, r)
+  const back   = project(-1, 0,  0, cx, cy, r)
+  const right  = project(0,  1,  0, cx, cy, r)
+  const left   = project(0, -1,  0, cx, cy, r)
+
+  // State vector tip
+  const tip    = project(blochX, blochY, blochZ, cx, cy, r)
+
+  // Generate equator ellipse points
+  const equatorPoints = Array.from({ length: 64 }, (_, i) => {
+    const a = (i / 64) * Math.PI * 2
+    return project(Math.cos(a), Math.sin(a), 0, cx, cy, r)
+  })
+  const equatorPath = equatorPoints
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+    .join(' ') + ' Z'
+
+  // Generate meridian (vertical circle) points
+  const meridianPoints = Array.from({ length: 64 }, (_, i) => {
+    const a = (i / 64) * Math.PI * 2
+    return project(Math.cos(a), 0, Math.sin(a), cx, cy, r)
+  })
+  const meridianPath = meridianPoints
+    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+    .join(' ') + ' Z'
+
+  return (
+    <svg width="400" height="400" viewBox="0 0 400 400">
+
+      {/* ── Outer sphere circle ── */}
+      <circle cx={cx} cy={cy} r={r}
+        fill="none" stroke="#7c6aff" strokeWidth="0.8" strokeOpacity="0.15" />
+
+      {/* ── Sphere shading ── */}
+      <circle cx={cx} cy={cy} r={r}
+        fill="radial-gradient"
+        style={{ fill: 'url(#sphereGrad)' }} />
+
+      <defs>
+        <radialGradient id="sphereGrad" cx="40%" cy="35%" r="60%">
+          <stop offset="0%"   stopColor="#7c6aff" stopOpacity="0.06" />
+          <stop offset="100%" stopColor="#7c6aff" stopOpacity="0.02" />
+        </radialGradient>
+      </defs>
+
+      {/* ── Equator ellipse ── */}
+      <path d={equatorPath}
+        fill="none" stroke="#7c6aff"
+        strokeWidth="0.8" strokeOpacity="0.25"
+        strokeDasharray="4,4" />
+
+      {/* ── Meridian circle ── */}
+      <path d={meridianPath}
+        fill="none" stroke="#7c6aff"
+        strokeWidth="0.8" strokeOpacity="0.15"
+        strokeDasharray="4,4" />
+
+      {/* ── Z axis (vertical) ── */}
+      <line x1={north.x} y1={north.y} x2={south.x} y2={south.y}
+        stroke="#7c6aff" strokeWidth="0.8" strokeOpacity="0.4" />
+
+      {/* ── X axis ── */}
+      <line x1={front.x} y1={front.y} x2={back.x} y2={back.y}
+        stroke="#ff453a" strokeWidth="0.8" strokeOpacity="0.4" />
+
+      {/* ── Y axis ── */}
+      <line x1={right.x} y1={right.y} x2={left.x} y2={left.y}
+        stroke="#30d158" strokeWidth="0.8" strokeOpacity="0.4" />
+
+      {/* ── Pole labels ── */}
+      <text x={north.x} y={north.y - 10}
+        textAnchor="middle" fontSize="11"
+        fill="#7c6aff" fontFamily="var(--font-mono)" fontWeight="600">
+        |0⟩
+      </text>
+      <text x={south.x} y={south.y + 18}
+        textAnchor="middle" fontSize="11"
+        fill="#7c6aff" fontFamily="var(--font-mono)" fontWeight="600">
+        |1⟩
+      </text>
+      <text x={front.x + 10} y={front.y + 4}
+        textAnchor="start" fontSize="10"
+        fill="#ff453a" fontFamily="var(--font-mono)" opacity="0.7">
+        |+⟩
+      </text>
+      <text x={back.x - 10} y={back.y + 4}
+        textAnchor="end" fontSize="10"
+        fill="#ff453a" fontFamily="var(--font-mono)" opacity="0.7">
+        |−⟩
+      </text>
+
+      {/* ── Pole dots ── */}
+      <circle cx={north.x} cy={north.y} r="4"
+        fill="#7c6aff" opacity="0.6" />
+      <circle cx={south.x} cy={south.y} r="4"
+        fill="#7c6aff" opacity="0.6" />
+      <circle cx={front.x} cy={front.y} r="3"
+        fill="#ff453a" opacity="0.5" />
+      <circle cx={back.x}  cy={back.y}  r="3"
+        fill="#ff453a" opacity="0.5" />
+
+      {/* ── State vector — line from centre to tip ── */}
+      <line
+        x1={cx} y1={cy}
+        x2={tip.x} y2={tip.y}
+        stroke="#7c6aff" strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+
+      {/* ── State vector tip glow ── */}
+      <circle cx={tip.x} cy={tip.y} r="8"
+        fill="#7c6aff" opacity="0.15" />
+      <circle cx={tip.x} cy={tip.y} r="5"
+        fill="#7c6aff" opacity="0.4" />
+      <circle cx={tip.x} cy={tip.y} r="3"
+        fill="#ffffff" opacity="0.9" />
+
+      {/* ── Centre dot ── */}
+      <circle cx={cx} cy={cy} r="3"
+        fill="#7c6aff" opacity="0.5" />
+
+      {/* ── Dashed projection lines ── */}
+      {/* Vertical drop from tip to equator */}
+      <line
+        x1={tip.x} y1={tip.y}
+        x2={tip.x} y2={cy}
+        stroke="#7c6aff" strokeWidth="0.6"
+        strokeOpacity="0.3" strokeDasharray="3,3" />
+      {/* Horizontal from equator point to centre */}
+      <line
+        x1={cx} y1={cy}
+        x2={tip.x} y2={cy}
+        stroke="#7c6aff" strokeWidth="0.6"
+        strokeOpacity="0.3" strokeDasharray="3,3" />
+
+    </svg>
+  )
+}
 
 export default function BlochSphere() {
-  const mountRef    = useRef(null)  // DOM node Three.js renders into
-  const sceneRef    = useRef(null)  // Three.js scene
-  const arrowRef    = useRef(null)  // The state vector arrow
-  const rendererRef = useRef(null)
-  const frameRef    = useRef(null)
-
-  const [gates,       setGates]       = useState([])  // applied gate sequence
-  const [stateInfo,   setStateInfo]   = useState({ label: '|0⟩', x: 0, y: 0, z: 1 })
-  const [loading,     setLoading]     = useState(false)
-  const [error,       setError]       = useState(null)
+  const [gates,         setGates]         = useState([])
+  const [bloch,         setBloch]         = useState({ x: 0, y: 0, z: 1 })
+  const [stateLabel,    setStateLabel]    = useState('|0⟩')
   const [probabilities, setProbabilities] = useState({ '0': 1, '1': 0 })
+  const [loading,       setLoading]       = useState(false)
+  const [error,         setError]         = useState(null)
 
-  // ── Three.js setup ─────────────────────────────────
-  useEffect(() => {
-    const width  = mountRef.current.clientWidth
-    const height = 400
-
-    // Scene
-    const scene = new THREE.Scene()
-    sceneRef.current = scene
-
-    // Camera — perspective, positioned slightly off-axis
-    // so we can see the sphere in 3D
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100)
-    camera.position.set(2.2, 1.4, 2.2)
-    camera.lookAt(0, 0, 0)
-
-    // Renderer with transparent background
-    // so the quantum background shows through
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-    })
-    renderer.setSize(width, height)
-    renderer.setPixelRatio(window.devicePixelRatio)
-    renderer.setClearColor(0x000000, 0)
-    mountRef.current.appendChild(renderer.domElement)
-    rendererRef.current = renderer
-
-    // ── Sphere wireframe ───────────────────────────
-    // We use a wireframe sphere so the background
-    // and the state vector inside are both visible
-    const sphereGeo  = new THREE.SphereGeometry(1, 24, 24)
-    const sphereMat  = new THREE.MeshBasicMaterial({
-      color: 0x7c6aff,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.08,
-    })
-    scene.add(new THREE.Mesh(sphereGeo, sphereMat))
-
-    // Outer glow ring — equator circle
-    const equatorGeo = new THREE.TorusGeometry(1, 0.003, 8, 64)
-    const equatorMat = new THREE.MeshBasicMaterial({
-      color: 0x7c6aff,
-      transparent: true,
-      opacity: 0.3,
-    })
-    scene.add(new THREE.Mesh(equatorGeo, equatorMat))
-
-    // ── Axes ───────────────────────────────────────
-    // X axis — red, Y axis — green, Z axis — blue
-    // These are the Bloch sphere axes
-    const axisLength = 1.3
-    const axes = [
-      { dir: new THREE.Vector3(1,0,0),  color: 0xff453a, label: 'X' },
-      { dir: new THREE.Vector3(0,1,0),  color: 0x30d158, label: 'Y' },
-      { dir: new THREE.Vector3(0,0,1),  color: 0x7c6aff, label: 'Z' },
-    ]
-
-    axes.forEach(({ dir, color }) => {
-      const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.4 })
-      const points = [
-        dir.clone().multiplyScalar(-axisLength),
-        dir.clone().multiplyScalar(axisLength)
-      ]
-      scene.add(new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(points),
-        mat
-      ))
-    })
-
-    // ── Pole markers ───────────────────────────────
-    const poleMat = new THREE.MeshBasicMaterial({ color: 0xf0f0ff })
-    const poleSphere = new THREE.SphereGeometry(0.04, 8, 8)
-    ;[
-      new THREE.Vector3(0,  0,  1.1),   // |0⟩ north
-      new THREE.Vector3(0,  0, -1.1),   // |1⟩ south
-      new THREE.Vector3( 1.1, 0, 0),    // |+⟩
-      new THREE.Vector3(-1.1, 0, 0),    // |−⟩
-    ].forEach(pos => {
-      const dot = new THREE.Mesh(poleSphere, poleMat)
-      dot.position.copy(pos)
-      scene.add(dot)
-    })
-
-    // ── State vector arrow ─────────────────────────
-    // ArrowHelper draws an arrow from origin to a point
-    // The arrow represents the current qubit state
-    const arrow = new THREE.ArrowHelper(
-      new THREE.Vector3(0, 0, 1),  // initial direction |0⟩ = north pole
-      new THREE.Vector3(0, 0, 0),  // origin
-      1.0,                          // length
-      0x7c6aff,                     // colour
-      0.15,                         // head length
-      0.08                          // head width
-    )
-    scene.add(arrow)
-    arrowRef.current = arrow
-
-    // ── Lighting ───────────────────────────────────
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6))
-    const dirLight = new THREE.DirectionalLight(0x7c6aff, 0.4)
-    dirLight.position.set(2, 2, 2)
-    scene.add(dirLight)
-
-    // ── Slow auto-rotation ─────────────────────────
-    // The sphere rotates slowly on its Y axis so the
-    // user can see the state vector in 3D without
-    // needing to drag/orbit
-    let angle = 0
-    function animate() {
-      frameRef.current = requestAnimationFrame(animate)
-      angle += 0.003
-      scene.rotation.y = angle
-      renderer.render(scene, camera)
-    }
-    animate()
-
-    // ── Cleanup on unmount ─────────────────────────
-    return () => {
-      cancelAnimationFrame(frameRef.current)
-      renderer.dispose()
-      if (mountRef.current && renderer.domElement) {
-        mountRef.current.removeChild(renderer.domElement)
-      }
-    }
-  }, [])
-
-  // ── Update arrow when state changes ───────────────
-  // Called after every gate application.
-  // Smoothly moves the arrow to the new Bloch position.
-  function updateArrow(x, y, z) {
-    if (!arrowRef.current) return
-
-    // Three.js Y axis is up, but Bloch sphere Z is up.
-    // We map Bloch (x,y,z) to Three.js (x,z,y)
-    // so |0⟩ appears at the top of the sphere.
-    const dir = new THREE.Vector3(x, z, y).normalize()
-    arrowRef.current.setDirection(dir)
-    arrowRef.current.setColor(new THREE.Color(0x7c6aff))
-  }
-
-  // ── Apply gate ─────────────────────────────────────
   async function handleApplyGate(gateId) {
     const newGates = [...gates, { gate: gateId, target: 0 }]
     setLoading(true)
@@ -194,9 +193,9 @@ export default function BlochSphere() {
     try {
       const data = await getBlochState(newGates)
       setGates(newGates)
-      setStateInfo({ label: data.label, x: data.x, y: data.y, z: data.z })
+      setBloch({ x: data.x, y: data.y, z: data.z })
+      setStateLabel(data.label)
       setProbabilities(data.probabilities)
-      updateArrow(data.x, data.y, data.z)
     } catch (err) {
       setError('Backend error — make sure the server is running.')
     } finally {
@@ -204,51 +203,48 @@ export default function BlochSphere() {
     }
   }
 
-  // ── Reset ──────────────────────────────────────────
   function handleReset() {
     setGates([])
-    setStateInfo({ label: '|0⟩', x: 0, y: 0, z: 1 })
+    setBloch({ x: 0, y: 0, z: 1 })
+    setStateLabel('|0⟩')
     setProbabilities({ '0': 1, '1': 0 })
-    updateArrow(0, 0, 1)
     setError(null)
   }
 
   return (
     <div style={styles.container}>
 
-      {/* ── Title ── */}
       <div style={styles.titleRow}>
         <h2 style={styles.title}>Bloch Sphere</h2>
         <p style={styles.subtitle}>
           Visualize single-qubit states geometrically.
-          Every point on the sphere is a valid qubit state.
+          Every point on the sphere surface is a valid qubit state.
         </p>
       </div>
 
       <div style={styles.layout}>
 
-        {/* ── Left panel — controls ── */}
+        {/* ── Left — controls ── */}
         <div style={styles.leftPanel}>
 
-          {/* Current state display */}
+          {/* Current state */}
           <div style={styles.stateCard}>
             <div style={styles.stateCardLabel}>Current State</div>
-            <div style={styles.stateSymbol}>{stateInfo.label}</div>
+            <div style={styles.stateSymbol}>{stateLabel}</div>
             <div style={styles.stateCoords}>
               <span style={styles.coord}>
-                <span style={styles.coordLabel}>x</span>
-                {stateInfo.x.toFixed(3)}
+                <span style={styles.coordLabel}>x </span>
+                {bloch.x.toFixed(3)}
               </span>
               <span style={styles.coord}>
-                <span style={styles.coordLabel}>y</span>
-                {stateInfo.y.toFixed(3)}
+                <span style={styles.coordLabel}>y </span>
+                {bloch.y.toFixed(3)}
               </span>
               <span style={styles.coord}>
-                <span style={styles.coordLabel}>z</span>
-                {stateInfo.z.toFixed(3)}
+                <span style={styles.coordLabel}>z </span>
+                {bloch.z.toFixed(3)}
               </span>
             </div>
-            {/* Measurement probabilities */}
             <div style={styles.probRow}>
               <div style={styles.probItem}>
                 <span style={styles.probLabel}>P(|0⟩)</span>
@@ -292,7 +288,7 @@ export default function BlochSphere() {
             </div>
           </div>
 
-          {/* Applied gate sequence */}
+          {/* Gate sequence */}
           {gates.length > 0 && (
             <div style={styles.section}>
               <div style={styles.sectionLabel}>Applied Sequence</div>
@@ -310,12 +306,11 @@ export default function BlochSphere() {
                     </span>
                   )
                 })}
-                <span style={styles.sequenceEnd}>{stateInfo.label}</span>
+                <span style={styles.sequenceEnd}>{stateLabel}</span>
               </div>
             </div>
           )}
 
-          {/* Reset button */}
           <button onClick={handleReset} style={styles.resetBtn}>
             ↺ Reset to |0⟩
           </button>
@@ -326,65 +321,41 @@ export default function BlochSphere() {
           <div style={styles.noteCard}>
             <div style={styles.noteTitle}>⚠ Note on Entanglement</div>
             <div style={styles.noteText}>
-              The Bloch sphere represents only <em>single qubit</em> states.
-              Entangled qubits cannot be described by individual Bloch spheres —
-              their states are inseparable. This is what makes entanglement
-              fundamentally non-classical.
+              The Bloch sphere represents only single qubit states.
+              Entangled qubits cannot be described by individual Bloch
+              spheres — their states are fundamentally inseparable.
+              This is what makes entanglement non-classical.
             </div>
           </div>
 
           {/* Axis legend */}
           <div style={styles.legendCard}>
             <div style={styles.sectionLabel}>Axis Guide</div>
-            <div style={styles.legendRow}>
-              <span style={{...styles.legendDot, background: '#7c6aff'}} />
-              <span style={styles.legendText}>Z axis — |0⟩ (top) to |1⟩ (bottom)</span>
-            </div>
-            <div style={styles.legendRow}>
-              <span style={{...styles.legendDot, background: '#ff453a'}} />
-              <span style={styles.legendText}>X axis — |+⟩ to |−⟩</span>
-            </div>
-            <div style={styles.legendRow}>
-              <span style={{...styles.legendDot, background: '#30d158'}} />
-              <span style={styles.legendText}>Y axis — |i⟩ to |−i⟩</span>
-            </div>
+            {[
+              { color: '#7c6aff', text: 'Z axis — |0⟩ top, |1⟩ bottom' },
+              { color: '#ff453a', text: 'X axis — |+⟩ to |−⟩' },
+              { color: '#30d158', text: 'Y axis — |i⟩ to |−i⟩' },
+            ].map((item, i) => (
+              <div key={i} style={styles.legendRow}>
+                <span style={{ ...styles.legendDot, background: item.color }} />
+                <span style={styles.legendText}>{item.text}</span>
+              </div>
+            ))}
           </div>
 
         </div>
 
-        {/* ── Right panel — Three.js sphere ── */}
+        {/* ── Right — SVG sphere ── */}
         <div style={styles.rightPanel}>
           <div style={styles.sphereCard}>
-
-            {/* Axis labels overlay */}
-            <div style={styles.axisLabels}>
-              <span style={{...styles.axisLabel, top: '8px', left: '50%', transform: 'translateX(-50%)', color: '#7c6aff'}}>
-                |0⟩ +Z
-              </span>
-              <span style={{...styles.axisLabel, bottom: '8px', left: '50%', transform: 'translateX(-50%)', color: '#7c6aff'}}>
-                |1⟩ −Z
-              </span>
-              <span style={{...styles.axisLabel, top: '50%', right: '8px', transform: 'translateY(-50%)', color: '#ff453a'}}>
-                |+⟩
-              </span>
-              <span style={{...styles.axisLabel, top: '50%', left: '8px', transform: 'translateY(-50%)', color: '#ff453a'}}>
-                |−⟩
-              </span>
-            </div>
-
-            {/* Three.js mounts here */}
-            <div ref={mountRef} style={styles.mount} />
-
-            {/* Loading overlay */}
-            {loading && (
-              <div style={styles.loadingOverlay}>
-                <div style={styles.loadingDot} />
-              </div>
-            )}
-
+            <BlochSVG
+              blochX={bloch.x}
+              blochY={bloch.y}
+              blochZ={bloch.z}
+            />
           </div>
 
-          {/* Educational walkthrough */}
+          {/* Try these sequences */}
           <div style={styles.educationCard}>
             <div style={styles.sectionLabel}>Try These Sequences</div>
             {[
@@ -392,25 +363,25 @@ export default function BlochSphere() {
                 label: 'Superposition',
                 sequence: 'H',
                 result: '|+⟩ on equator',
-                desc: 'H moves the state from the north pole to the equator — equal probability of 0 and 1.'
+                desc: 'H moves from north pole to equator — 50/50 probability.'
               },
               {
                 label: 'Full Flip',
                 sequence: 'X',
                 result: '|1⟩ south pole',
-                desc: 'X rotates 180° around the X axis — flips from north to south pole.'
+                desc: 'X rotates 180° around X axis — north to south pole.'
               },
               {
-                label: 'Phase Flip',
+                label: 'Phase then Interference',
                 sequence: 'H → Z → H',
                 result: '|1⟩',
-                desc: 'Z is invisible alone but after H it causes destructive interference — ending at |1⟩.'
+                desc: 'Z is invisible alone but causes destructive interference after H.'
               },
               {
-                label: 'Return Home',
+                label: 'H is its own inverse',
                 sequence: 'H → H',
                 result: '|0⟩',
-                desc: 'Two Hadamards cancel — H is its own inverse. Returns to north pole.'
+                desc: 'Two Hadamards cancel perfectly — returns to north pole.'
               },
             ].map((ex, i) => (
               <div key={i} style={styles.exampleRow}>
@@ -428,24 +399,16 @@ export default function BlochSphere() {
   )
 }
 
-// ── Styles ────────────────────────────────────────────
 const styles = {
-  container: {
-    maxWidth: '1100px',
-  },
-  titleRow: {
-    marginBottom: '28px',
-  },
+  container:      { maxWidth: '1100px' },
+  titleRow:       { marginBottom: '28px' },
   title: {
-    fontSize: '24px',
-    fontWeight: '700',
-    color: 'var(--text-primary)',
-    marginBottom: '4px',
+    fontSize: '24px', fontWeight: '700',
+    color: 'var(--text-primary)', marginBottom: '4px',
     letterSpacing: '-0.02em',
   },
   subtitle: {
-    color: 'var(--text-secondary)',
-    fontSize: '13px',
+    color: 'var(--text-secondary)', fontSize: '13px',
     fontFamily: 'var(--font-mono)',
   },
   layout: {
@@ -454,283 +417,112 @@ const styles = {
     gap: '24px',
     alignItems: 'start',
   },
-  leftPanel: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  },
+  leftPanel:  { display: 'flex', flexDirection: 'column', gap: '16px' },
+  rightPanel: { display: 'flex', flexDirection: 'column', gap: '16px' },
   stateCard: {
-    background: 'var(--bg-card)',
-    borderRadius: '14px',
-    border: '1px solid var(--border)',
-    padding: '20px',
-    textAlign: 'center',
+    background: 'var(--bg-card)', borderRadius: '14px',
+    border: '1px solid var(--border)', padding: '20px', textAlign: 'center',
   },
   stateCardLabel: {
-    fontSize: '10px',
-    color: 'var(--text-tertiary)',
-    fontFamily: 'var(--font-mono)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.1em',
-    marginBottom: '8px',
+    fontSize: '10px', color: 'var(--text-tertiary)',
+    fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
+    letterSpacing: '0.1em', marginBottom: '8px',
   },
   stateSymbol: {
-    fontSize: '36px',
-    fontFamily: 'var(--font-mono)',
-    fontWeight: '300',
-    color: 'var(--accent)',
-    marginBottom: '12px',
-    letterSpacing: '-0.02em',
+    fontSize: '36px', fontFamily: 'var(--font-mono)',
+    fontWeight: '300', color: 'var(--accent)',
+    marginBottom: '12px', letterSpacing: '-0.02em',
   },
   stateCoords: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '12px',
-    marginBottom: '16px',
+    display: 'flex', justifyContent: 'center',
+    gap: '12px', marginBottom: '16px',
   },
   coord: {
-    fontSize: '11px',
-    fontFamily: 'var(--font-mono)',
+    fontSize: '11px', fontFamily: 'var(--font-mono)',
     color: 'var(--text-secondary)',
   },
-  coordLabel: {
-    color: 'var(--accent)',
-    marginRight: '2px',
-  },
+  coordLabel: { color: 'var(--accent)', marginRight: '2px' },
   probRow: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '20px',
-    paddingTop: '12px',
-    borderTop: '1px solid var(--border)',
+    display: 'flex', justifyContent: 'center', gap: '20px',
+    paddingTop: '12px', borderTop: '1px solid var(--border)',
   },
-  probItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '2px',
-  },
-  probLabel: {
-    fontSize: '10px',
-    color: 'var(--text-tertiary)',
-    fontFamily: 'var(--font-mono)',
-  },
-  probValue: {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: 'var(--text-primary)',
-    fontFamily: 'var(--font-mono)',
-  },
-  section: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-  },
+  probItem:  { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' },
+  probLabel: { fontSize: '10px', color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' },
+  probValue: { fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' },
+  section:      { display: 'flex', flexDirection: 'column', gap: '10px' },
   sectionLabel: {
-    fontSize: '10px',
-    color: 'var(--text-tertiary)',
-    fontFamily: 'var(--font-mono)',
-    textTransform: 'uppercase',
+    fontSize: '10px', color: 'var(--text-tertiary)',
+    fontFamily: 'var(--font-mono)', textTransform: 'uppercase',
     letterSpacing: '0.1em',
   },
-  gateGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '8px',
-  },
+  gateGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' },
   gateBtn: {
-    width: '100%',
-    height: '44px',
-    borderRadius: '10px',
-    border: '1px solid',
-    background: 'transparent',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontFamily: 'var(--font-mono)',
-    fontWeight: '700',
+    width: '100%', height: '44px', borderRadius: '10px',
+    border: '1px solid', background: 'transparent',
+    cursor: 'pointer', fontSize: '14px',
+    fontFamily: 'var(--font-mono)', fontWeight: '700',
     transition: 'all 0.15s ease',
   },
   sequence: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    flexWrap: 'wrap',
-    padding: '10px 12px',
-    background: 'var(--bg-card)',
-    borderRadius: '10px',
+    display: 'flex', alignItems: 'center', gap: '4px',
+    flexWrap: 'wrap', padding: '10px 12px',
+    background: 'var(--bg-card)', borderRadius: '10px',
     border: '1px solid var(--border)',
   },
-  sequenceStart: {
-    fontSize: '11px',
-    color: 'var(--text-secondary)',
-    fontFamily: 'var(--font-mono)',
-  },
+  sequenceStart: { fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' },
   sequenceGate: {
-    fontSize: '11px',
-    fontFamily: 'var(--font-mono)',
-    fontWeight: '700',
-    padding: '2px 6px',
-    borderRadius: '4px',
-    border: '1px solid',
-    background: 'transparent',
+    fontSize: '11px', fontFamily: 'var(--font-mono)', fontWeight: '700',
+    padding: '2px 6px', borderRadius: '4px', border: '1px solid', background: 'transparent',
   },
-  sequenceEnd: {
-    fontSize: '11px',
-    color: 'var(--accent)',
-    fontFamily: 'var(--font-mono)',
-    fontWeight: '600',
-  },
+  sequenceEnd: { fontSize: '11px', color: 'var(--accent)', fontFamily: 'var(--font-mono)', fontWeight: '600' },
   resetBtn: {
-    padding: '9px 16px',
-    borderRadius: '10px',
-    border: '1px solid var(--border-hover)',
-    background: 'transparent',
-    color: 'var(--text-secondary)',
-    cursor: 'pointer',
-    fontSize: '12px',
-    fontFamily: 'var(--font-mono)',
-    transition: 'all 0.15s ease',
-    width: '100%',
+    padding: '9px 16px', borderRadius: '10px',
+    border: '1px solid var(--border-hover)', background: 'transparent',
+    color: 'var(--text-secondary)', cursor: 'pointer',
+    fontSize: '12px', fontFamily: 'var(--font-mono)',
+    transition: 'all 0.15s ease', width: '100%',
   },
   error: {
-    color: '#ff453a',
-    fontSize: '12px',
-    fontFamily: 'var(--font-mono)',
-    padding: '10px 14px',
-    background: 'rgba(255,69,58,0.08)',
-    borderRadius: '10px',
-    border: '1px solid rgba(255,69,58,0.2)',
+    color: '#ff453a', fontSize: '12px', fontFamily: 'var(--font-mono)',
+    padding: '10px 14px', background: 'rgba(255,69,58,0.08)',
+    borderRadius: '10px', border: '1px solid rgba(255,69,58,0.2)',
   },
   noteCard: {
-    background: 'rgba(255, 159, 10, 0.06)',
-    borderRadius: '12px',
-    border: '1px solid rgba(255, 159, 10, 0.2)',
-    padding: '14px 16px',
+    background: 'rgba(255, 159, 10, 0.06)', borderRadius: '12px',
+    border: '1px solid rgba(255, 159, 10, 0.2)', padding: '14px 16px',
   },
   noteTitle: {
-    fontSize: '11px',
-    color: '#ff9f0a',
-    fontFamily: 'var(--font-mono)',
-    fontWeight: '600',
-    marginBottom: '6px',
-    letterSpacing: '0.02em',
+    fontSize: '11px', color: '#ff9f0a', fontFamily: 'var(--font-mono)',
+    fontWeight: '600', marginBottom: '6px', letterSpacing: '0.02em',
   },
   noteText: {
-    fontSize: '11px',
-    color: 'var(--text-secondary)',
-    fontFamily: 'var(--font-mono)',
-    lineHeight: '1.6',
+    fontSize: '11px', color: 'var(--text-secondary)',
+    fontFamily: 'var(--font-mono)', lineHeight: '1.6',
   },
   legendCard: {
-    background: 'var(--bg-card)',
-    borderRadius: '12px',
-    border: '1px solid var(--border)',
-    padding: '14px 16px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
+    background: 'var(--bg-card)', borderRadius: '12px',
+    border: '1px solid var(--border)', padding: '14px 16px',
+    display: 'flex', flexDirection: 'column', gap: '10px',
   },
-  legendRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  legendDot: {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    flexShrink: 0,
-  },
-  legendText: {
-    fontSize: '11px',
-    color: 'var(--text-secondary)',
-    fontFamily: 'var(--font-mono)',
-  },
-  rightPanel: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  },
+  legendRow:  { display: 'flex', alignItems: 'center', gap: '8px' },
+  legendDot:  { width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0 },
+  legendText: { fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' },
   sphereCard: {
-    background: 'var(--bg-card)',
-    borderRadius: '14px',
-    border: '1px solid var(--border)',
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  axisLabels: {
-    position: 'absolute',
-    top: 0, left: 0,
-    width: '100%',
-    height: '100%',
-    pointerEvents: 'none',
-    zIndex: 2,
-  },
-  axisLabel: {
-    position: 'absolute',
-    fontSize: '11px',
-    fontFamily: 'var(--font-mono)',
-    fontWeight: '600',
-    opacity: 0.7,
-  },
-  mount: {
-    width: '100%',
-    height: '400px',
-  },
-  loadingOverlay: {
-    position: 'absolute',
-    top: 0, left: 0,
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'rgba(15,15,24,0.4)',
-    zIndex: 3,
-  },
-  loadingDot: {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    background: 'var(--accent)',
-    animation: 'pulse 1s ease infinite',
+    background: 'var(--bg-card)', borderRadius: '14px',
+    border: '1px solid var(--border)', padding: '20px',
+    display: 'flex', justifyContent: 'center',
   },
   educationCard: {
-    background: 'var(--bg-card)',
-    borderRadius: '14px',
-    border: '1px solid var(--border)',
-    padding: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
+    background: 'var(--bg-card)', borderRadius: '14px',
+    border: '1px solid var(--border)', padding: '20px',
+    display: 'flex', flexDirection: 'column', gap: '16px',
   },
   exampleRow: {
-    paddingBottom: '14px',
-    borderBottom: '1px solid var(--border)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
+    paddingBottom: '14px', borderBottom: '1px solid var(--border)',
+    display: 'flex', flexDirection: 'column', gap: '4px',
   },
-  exampleLabel: {
-    fontSize: '12px',
-    fontWeight: '600',
-    color: 'var(--text-primary)',
-    fontFamily: 'var(--font-mono)',
-  },
-  exampleSequence: {
-    fontSize: '12px',
-    color: 'var(--accent)',
-    fontFamily: 'var(--font-mono)',
-  },
-  exampleResult: {
-    fontSize: '11px',
-    color: '#30d158',
-    fontFamily: 'var(--font-mono)',
-  },
-  exampleDesc: {
-    fontSize: '11px',
-    color: 'var(--text-secondary)',
-    fontFamily: 'var(--font-mono)',
-    lineHeight: '1.5',
-  },
+  exampleLabel:    { fontSize: '12px', fontWeight: '600', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' },
+  exampleSequence: { fontSize: '12px', color: 'var(--accent)', fontFamily: 'var(--font-mono)' },
+  exampleResult:   { fontSize: '11px', color: '#30d158', fontFamily: 'var(--font-mono)' },
+  exampleDesc:     { fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', lineHeight: '1.5' },
 }
