@@ -463,7 +463,9 @@ export default function App() {
           {activeTab === 'playground'   && <CircuitBuilder />}
           {activeTab === 'algorithms'   && <AlgorithmPanel />}
           {activeTab === 'entanglement' && <BlochSphere />}
-          {activeTab === 'learn'        && <Tutorials />}
+          {activeTab === 'learn' && (
+            <Tutorials onNavigate={(tab) => setActiveTab(tab)} />
+          )}
         </main>
 
       </div>
