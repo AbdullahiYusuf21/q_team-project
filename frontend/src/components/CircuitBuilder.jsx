@@ -10,6 +10,72 @@ const CELL_GAP = 6
 const CELL_HEIGHT = 40
 const ROW_GAP = 8
 const QUBIT_LABEL_WIDTH = 52
+const PRESETS = [
+  {
+    id: 'bell',
+    label: 'Bell State',
+    description: 'Maximally entangled 2-qubit state',
+    nQubits: 2,
+    gates: [
+      { qubit: 0, step: 0, gate: 'H' },
+      { qubit: 0, step: 1, gate: 'CNOT', role: 'control', linkedQubit: 1 },
+      { qubit: 1, step: 1, gate: 'CNOT', role: 'target',  linkedQubit: 0 },
+    ]
+  },
+  {
+    id: 'ghz',
+    label: 'GHZ State',
+    description: '3-qubit entanglement',
+    nQubits: 3,
+    gates: [
+      { qubit: 0, step: 0, gate: 'H' },
+      { qubit: 0, step: 1, gate: 'CNOT', role: 'control', linkedQubit: 1 },
+      { qubit: 1, step: 1, gate: 'CNOT', role: 'target',  linkedQubit: 0 },
+      { qubit: 0, step: 2, gate: 'CNOT', role: 'control', linkedQubit: 2 },
+      { qubit: 2, step: 2, gate: 'CNOT', role: 'target',  linkedQubit: 0 },
+    ]
+  },
+  {
+    id: 'superposition',
+    label: 'Full Superposition',
+    description: 'All qubits in equal superposition',
+    nQubits: 3,
+    gates: [
+      { qubit: 0, step: 0, gate: 'H' },
+      { qubit: 1, step: 0, gate: 'H' },
+      { qubit: 2, step: 0, gate: 'H' },
+    ]
+  },
+  {
+    id: 'phase-kickback',
+    label: 'Phase Kickback',
+    description: 'HZH = X — interference in action',
+    nQubits: 1,
+    gates: [
+      { qubit: 0, step: 0, gate: 'H' },
+      { qubit: 0, step: 1, gate: 'Z' },
+      { qubit: 0, step: 2, gate: 'H' },
+    ]
+  },
+  {
+    id: 'teleportation',
+    label: 'Teleportation Prep',
+    description: 'Entanglement as a quantum resource',
+    nQubits: 3,
+    gates: [
+      // Create Bell pair between q1 and q2
+      { qubit: 1, step: 0, gate: 'H' },
+      { qubit: 1, step: 1, gate: 'CNOT', role: 'control', linkedQubit: 2 },
+      { qubit: 2, step: 1, gate: 'CNOT', role: 'target',  linkedQubit: 1 },
+      // Encode message qubit q0
+      { qubit: 0, step: 2, gate: 'H' },
+      // Bell measurement on q0 and q1
+      { qubit: 0, step: 3, gate: 'CNOT', role: 'control', linkedQubit: 1 },
+      { qubit: 1, step: 3, gate: 'CNOT', role: 'target',  linkedQubit: 0 },
+      { qubit: 0, step: 4, gate: 'H' },
+    ]
+  },
+]
 
 const GATES = [
   {
@@ -118,6 +184,24 @@ export default function CircuitBuilder() {
   // ── Clear ──────────────────────────────────────────
   function handleClear() {
     setGrid(emptyGrid(nQubits))
+    setResult(null)
+    setError(null)
+    setCnotControl(null)
+    setStepIndex(null)
+  }
+  // ── Load preset circuit ────────────────────────────
+  // Builds the grid from a preset definition.
+  // Each preset gate specifies qubit, step, gate name,
+  // and for CNOT — role and linkedQubit.
+  function loadPreset(preset) {
+    const newGrid = emptyGrid(preset.nQubits)
+    preset.gates.forEach(({ qubit, step, gate, role, linkedQubit }) => {
+      newGrid[qubit][step] = role
+        ? { gate, role, linkedQubit }
+        : { gate }
+    })
+    setNQubits(preset.nQubits)
+    setGrid(newGrid)
     setResult(null)
     setError(null)
     setCnotControl(null)
@@ -264,14 +348,37 @@ function handleStepReset() {
   // ── Render ─────────────────────────────────────────
   return (
     <div style={styles.container}>
-
-      {/* Title */}
+      {/* ── Title + Presets ── */}
       <div style={styles.titleRow}>
-        <h2 style={styles.title}>Circuit Playground</h2>
-        <p style={styles.subtitle}>
-          Select a gate, click cells to place it, then hit Run.
-        </p>
+        <div style={styles.titleLeft}>
+          <h2 style={styles.title}>Circuit Playground</h2>
+          <p style={styles.subtitle}>
+            Select a gate, click cells to place it, then hit Run.
+          </p>
+        </div>
+
+        {/* Preset circuits dropdown */}
+        <div style={styles.presetWrapper}>
+          <span style={styles.presetLabel}>Presets</span>
+          <div style={styles.presetBtns}>
+            {PRESETS.map(preset => (
+              <div key={preset.id} className="tooltip-wrapper">
+                <button
+                  onClick={() => loadPreset(preset)}
+                  style={styles.presetBtn}
+                >
+                  {preset.label}
+                </button>
+                <div className="tooltip">
+                  <div className="tooltip-title">{preset.label}</div>
+                  <div className="tooltip-desc">{preset.description}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
+      
 
       {/* Controls row */}
       <div style={styles.controlsRow}>
@@ -473,7 +580,50 @@ const styles = {
   },
   titleRow: {
     marginBottom: '24px',
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: '16px',
   },
+  titleLeft: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+  },
+  presetWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    alignment: 'flex-end',
+  },
+  presetlabel: {
+    fontSize: '10px',
+    color: 'var(--text-tertiary)',
+    fontFamily: 'var(--font-mono)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+  },
+  presetBtns: {
+  display: 'flex',
+  gap: '6px',
+  flexWrap: 'wrap',
+  justifyContent: 'flex-end',
+},
+  presetBtn: {
+    padding: '6px 12px',
+    borderRadius: '8px',
+    border: '1px solid var(--border-hover)',
+    background: 'transparent',
+    color: 'var(--text-secondary)',
+    cursor: 'pointer',
+    fontSize: '11px',
+    fontFamily: 'var(--font-mono)',
+    fontWeight: '500',
+    transition: 'all 0.15s ease',
+    whiteSpace: 'nowrap',
+},
+
   title: {
     fontSize: '24px',
     fontWeight: '700',
