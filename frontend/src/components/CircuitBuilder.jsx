@@ -143,6 +143,8 @@ export default function CircuitBuilder() {
   const [loading,      setLoading]      = useState(false)
   const [error,        setError]        = useState(null)
   const [stepIndex,    setStepIndex]    = useState(null)
+  const [measured,       setMeasured]       = useState(null)
+  const [measuring,      setMeasuring]      = useState(false)
 
   // ── Qubit count change ─────────────────────────────
   function handleQubitChange(n) {
@@ -191,6 +193,8 @@ export default function CircuitBuilder() {
     setError(null)
     setCnotControl(null)
     setStepIndex(null)
+    setMeasured(null)
+    setMeasuring(false)
   }
   // ── Load preset circuit ────────────────────────────
   // Builds the grid from a preset definition.
@@ -232,6 +236,8 @@ export default function CircuitBuilder() {
 
 // ── Run all gates at once ───────────────────────────
 async function handleRun() {
+  setMeasured(null)
+  setMeasuring(false)
   setLoading(true)
   setError(null)
   setResult(null)
@@ -253,6 +259,42 @@ async function handleRun() {
   } finally {
     setLoading(false)
   }
+}
+// ── Measure ────────────────────────────────────────
+// Simulates wavefunction collapse using Born rule.
+// Generates a random number and walks the probability
+// distribution to find which basis state it collapses to.
+// This is exactly how quantum measurement works physically.
+function handleMeasure() {
+  if (!result) return
+  setMeasuring(true)
+  setMeasured(null)
+
+  // Short delay for dramatic effect
+  setTimeout(() => {
+    const probs = result.probabilities
+    const random = Math.random()
+    let cumulative = 0
+    let outcome = null
+
+    for (const [state, prob] of Object.entries(probs)) {
+      cumulative += prob
+      if (random <= cumulative) {
+        outcome = state
+        break
+      }
+    }
+
+    // Fallback to last non-zero state if floating point issues
+    if (!outcome) {
+      outcome = Object.entries(probs)
+        .filter(([, p]) => p > 0)
+        .pop()[0]
+    }
+
+    setMeasured(outcome)
+    setMeasuring(false)
+  }, 600)
 }
 
 // ── Step through one gate at a time ────────────────
@@ -446,6 +488,22 @@ function handleStepReset() {
           >
             {loading ? 'Running...' : '▶ Run'}
           </button>
+          {/* Measure button — only shows after simulation */}
+          {result && (
+            <button
+              onClick={handleMeasure}
+              disabled={measuring}
+              style={{
+                ...styles.runBtn,
+                background: 'transparent',
+                border: '1px solid #30d158',
+                color: '#30d158',
+                opacity: measuring ? 0.6 : 1,
+              }}
+            >
+              {measuring ? 'Collapsing...' : '⊕ Measure'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -611,10 +669,51 @@ function handleStepReset() {
               })}
             </div>
           </div>
+          {/* ── Measurement collapse ── */}
+          {measuring && (
+            <div style={styles.collapseCard}>
+              <div style={styles.collapseAnimation}>
+                <div style={styles.collapseDot} />
+                <div style={styles.collapseText}>
+                  Wavefunction collapsing...
+                </div>
+              </div>
+            </div>
+          )}
+
+          {measured && !measuring && (
+            <div className="fade-slide-up" style={styles.measureResult}>
+              <div style={styles.measureResultIcon}>⊕</div>
+              <div>
+                <div style={styles.measureResultTitle}>
+                  Measurement Outcome
+                </div>
+                <div style={styles.measureResultState}>
+                  |{measured}⟩
+                </div>
+                <div style={styles.measureResultDesc}>
+                  Wavefunction collapsed from superposition to a
+                  definite state. Probability of this outcome
+                  was {((result.probabilities[measured] || 0) * 100).toFixed(1)}%.
+                  Run again for a new random outcome.
+                </div>
+              </div>
+            </div>
+          )}
+
 
           {/* ── Probability chart ── */}
           <h3 style={styles.resultsTitle}>Measurement Probabilities</h3>
-          <ProbabilityChart probabilities={result.probabilities} />
+          <ProbabilityChart
+            probabilities={measured && !measuring
+              ? Object.fromEntries(
+                  Object.entries(result.probabilities).map(([k, v]) =>
+                    [k, k === measured ? 1 : 0]
+                  )
+                )
+              : result.probabilities
+            }
+          />
 
         </div>
       )}
@@ -954,5 +1053,69 @@ ampBarFill: {
   background: 'var(--accent)',
   borderRadius: '2px',
   transition: 'width 0.4s ease',
+},
+collapseCard: {
+  background: 'var(--bg-card)',
+  borderRadius: '14px',
+  border: '1px solid var(--border)',
+  padding: '20px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+collapseAnimation: {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+},
+collapseDot: {
+  width: '10px',
+  height: '10px',
+  borderRadius: '50%',
+  background: '#30d158',
+  animation: 'pulse 0.6s ease infinite',
+},
+collapseText: {
+  fontSize: '13px',
+  color: '#30d158',
+  fontFamily: 'var(--font-mono)',
+  letterSpacing: '0.04em',
+},
+measureResult: {
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: '16px',
+  background: 'rgba(48, 209, 88, 0.06)',
+  borderRadius: '14px',
+  border: '1px solid rgba(48, 209, 88, 0.25)',
+  padding: '20px',
+},
+measureResultIcon: {
+  fontSize: '28px',
+  color: '#30d158',
+  flexShrink: 0,
+  fontFamily: 'var(--font-mono)',
+},
+measureResultTitle: {
+  fontSize: '11px',
+  color: 'rgba(48, 209, 88, 0.7)',
+  fontFamily: 'var(--font-mono)',
+  textTransform: 'uppercase',
+  letterSpacing: '0.1em',
+  marginBottom: '4px',
+},
+measureResultState: {
+  fontSize: '32px',
+  color: '#30d158',
+  fontFamily: 'var(--font-mono)',
+  fontWeight: '300',
+  letterSpacing: '-0.02em',
+  marginBottom: '8px',
+},
+measureResultDesc: {
+  fontSize: '12px',
+  color: 'var(--text-secondary)',
+  fontFamily: 'var(--font-mono)',
+  lineHeight: '1.6',
 },
 }
