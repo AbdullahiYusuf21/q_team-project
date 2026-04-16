@@ -118,6 +118,9 @@ const GATES = [
 function emptyGrid(nQubits) {
   return Array.from({ length: nQubits }, () => Array(STEPS).fill(null))
 }
+function format(index, nQubits) {
+  return index.toString(2).padStart(nQubits, '0')
+}
 
 // Calculates the x center of a cell given its step index
 // This is used to position the SVG line horizontally
@@ -560,12 +563,59 @@ function handleStepReset() {
       {grid.flat().some(Boolean) && (
         <ExportButton grid={grid} nQubits={nQubits} />
       )}
-
       {/* Results */}
       {result && (
         <div style={styles.results}>
+
+          {/* ── Statevector display ── */}
+          <div style={styles.statevectorCard}>
+            <div style={styles.statevectorHeader}>
+              <h3 style={styles.resultsTitle}>State Vector</h3>
+              <span style={styles.statevectorSubtitle}>
+                Complex amplitudes — square to get probabilities
+              </span>
+            </div>
+            <div style={styles.statevectorGrid}>
+              {result.statevector.map((amp, i) => {
+                const label     = format(i, result.n_qubits)
+                const prob      = amp.real ** 2 + amp.imag ** 2
+                const isNonZero = prob > 0.001
+                if (!isNonZero) return null
+                return (
+                  <div key={i} style={styles.ampCard}>
+                    <div style={styles.ampLabel}>|{label}⟩</div>
+                    <div style={styles.ampValue}>
+                      <span style={styles.ampReal}>
+                        {amp.real >= 0 ? '' : '−'}
+                        {Math.abs(amp.real).toFixed(4)}
+                      </span>
+                      {Math.abs(amp.imag) > 0.0001 && (
+                        <span style={styles.ampImag}>
+                          {amp.imag >= 0 ? ' + ' : ' − '}
+                          {Math.abs(amp.imag).toFixed(4)}i
+                        </span>
+                      )}
+                    </div>
+                    <div style={styles.ampProb}>
+                      {(prob * 100).toFixed(1)}%
+                    </div>
+                    {/* Probability bar */}
+                    <div style={styles.ampBar}>
+                      <div style={{
+                        ...styles.ampBarFill,
+                        width: `${prob * 100}%`,
+                      }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* ── Probability chart ── */}
           <h3 style={styles.resultsTitle}>Measurement Probabilities</h3>
           <ProbabilityChart probabilities={result.probabilities} />
+
         </div>
       )}
 
@@ -836,5 +886,73 @@ stepIndicatorDot: {
   borderRadius: '50%',
   background: 'var(--accent)',
   animation: 'pulse 1.5s ease infinite',
+},
+statevectorCard: {
+  background: 'var(--bg-card)',
+  borderRadius: '14px',
+  border: '1px solid var(--border)',
+  padding: '20px',
+  marginBottom: '20px',
+},
+statevectorHeader: {
+  display: 'flex',
+  alignItems: 'baseline',
+  gap: '12px',
+  marginBottom: '16px',
+},
+statevectorSubtitle: {
+  fontSize: '11px',
+  color: 'var(--text-tertiary)',
+  fontFamily: 'var(--font-mono)',
+},
+statevectorGrid: {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+  gap: '10px',
+},
+ampCard: {
+  background: 'var(--bg-elevated)',
+  borderRadius: '10px',
+  border: '1px solid var(--border)',
+  padding: '12px 14px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '4px',
+},
+ampLabel: {
+  fontSize: '14px',
+  color: 'var(--accent)',
+  fontFamily: 'var(--font-mono)',
+  fontWeight: '600',
+  letterSpacing: '0.02em',
+},
+ampValue: {
+  fontSize: '12px',
+  fontFamily: 'var(--font-mono)',
+  color: 'var(--text-primary)',
+},
+ampReal: {
+  color: 'var(--text-primary)',
+},
+ampImag: {
+  color: '#bf5af2',
+},
+ampProb: {
+  fontSize: '11px',
+  color: 'var(--text-secondary)',
+  fontFamily: 'var(--font-mono)',
+},
+ampBar: {
+  height: '3px',
+  background: 'var(--border)',
+  borderRadius: '2px',
+  overflow: 'hidden',
+  marginTop: '4px',
+},
+ampBarFill: {
+  height: '100%',
+  background: 'var(--accent)',
+  borderRadius: '2px',
+  transition: 'width 0.4s ease',
 },
 }
