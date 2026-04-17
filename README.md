@@ -300,7 +300,7 @@ This project was developed as a final year thesis for the Bachelor of Science in
 **Thesis title:** A Web-Based Interactive Quantum Computing Simulator and Visualizer  
 **Student:** Haron Abdullahi Yusuf  
 **Registration:** SCT-253-018/2021  
-**Submission deadline:** May 2026
+
 
 ### Key Design Decisions
 
