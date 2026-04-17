@@ -538,6 +538,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '24px',
+    width: '100%',
   },
   descriptionCard: {
     background: 'var(--bg-card)',

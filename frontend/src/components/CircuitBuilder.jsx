@@ -757,7 +757,7 @@ const styles = {
   display: 'flex',
   gap: '6px',
   flexWrap: 'wrap',
-  justifyContent: 'flex-end',
+  justifyContent: 'flex-start',
 },
   presetBtn: {
     padding: '6px 12px',
@@ -884,6 +884,8 @@ const styles = {
     padding: '20px 16px',
     marginBottom: '20px',
     position: 'relative',
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch',
   },
   qubitRow: {
     display: 'flex',

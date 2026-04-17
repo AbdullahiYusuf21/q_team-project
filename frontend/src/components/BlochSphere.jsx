@@ -318,7 +318,7 @@ export default function BlochSphere() {
         </p>
       </div>
 
-      <div style={styles.layout}>
+      <div style={styles.layout} className="two-col-layout">
 
         {/* ── Left panel ── */}
         <div style={styles.leftPanel}>

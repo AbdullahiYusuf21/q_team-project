@@ -329,7 +329,7 @@ export default function Tutorials({ onNavigate }) {
         </p>
       </div>
 
-      <div style={styles.layout}>
+      <div style={styles.layout} className="two-col-layout">
 
         {/* ── Left — module list ── */}
         <div style={styles.sidebar}>

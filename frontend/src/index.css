@@ -246,3 +246,50 @@ h1, h2, h3, h4 {
   transform-origin: bottom;
   animation: probabilityFill 0.6s ease forwards;
 }
+/* ── Mobile Responsive ────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Header */
+  .header-inner {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 20px;
+  }
+
+  /* Navigation — horizontally scrollable */
+  .nav-inner {
+    padding: 8px 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .nav-inner::-webkit-scrollbar { display: none; }
+
+  /* Main content padding */
+  .main-inner {
+    padding: 20px 16px;
+  }
+
+  /* Two-column grids collapse to single column */
+  .two-col-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Circuit grid — horizontal scroll */
+  .circuit-grid-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Preset buttons wrap */
+  .preset-row {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-inner {
+    padding: 16px 12px;
+  }
+}
