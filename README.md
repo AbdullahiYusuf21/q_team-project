@@ -1,6 +1,6 @@
 # QSIM — Web-Based Quantum Circuit Simulator & Visualizer
 
-> A full-stack interactive quantum computing educational platform built as a final year thesis project for a BSc in Applied Physics and Computer Science at Multimedia University of Kenya.
+> A full-stack interactive quantum computing educational platform built as a final year  project for a BSc in Applied Physics and Computer Science.
 
 **Live Application:** https://q-team-project.vercel.app  
 **Backend API:** https://qsim-api.onrender.com  
