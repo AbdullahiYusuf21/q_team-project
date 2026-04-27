@@ -10,7 +10,7 @@ def fidelity(sv1, sv2):
 
 def run_qiskit(n_qubits, gates):
     """
-    Our engine convention: qubit 0 = most significant bit.
+    The engine convention: qubit 0 = most significant bit.
     So index 2 = binary '10' means qubit 0 is |1>, qubit 1 is |0>.
 
     Qiskit convention: qubit 0 = least significant bit.

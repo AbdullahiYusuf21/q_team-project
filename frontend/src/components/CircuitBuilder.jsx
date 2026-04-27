@@ -15,6 +15,13 @@ const PRESETS = [
     id: 'bell',
     label: 'Bell State',
     description: 'Maximally entangled 2-qubit state',
+    info: {
+      name: 'Bell State  |Φ+⟩ = (|00⟩ + |11⟩)/√2',
+      what: 'The Bell state is the simplest and most famous example of quantum entanglement. Two qubits become perfectly correlated — measuring one instantly determines the other, regardless of distance.',
+      how: 'H puts qubit 0 into superposition (|0⟩+|1⟩)/√2. The CNOT then conditionally flips qubit 1 only when qubit 0 is |1⟩. Since qubit 0 is in superposition, both outcomes happen simultaneously — creating the entangled state.',
+      expect: '50% probability on |00⟩ and 50% on |11⟩. The states |01⟩ and |10⟩ are exactly zero — the qubits are perfectly correlated and will never disagree.',
+      physics: 'This demonstrates quantum entanglement. Einstein called this "spooky action at a distance" — the correlation exists before measurement and cannot be explained by classical physics.',
+    },
     nQubits: 2,
     gates: [
       { qubit: 0, step: 0, gate: 'H' },
@@ -26,6 +33,13 @@ const PRESETS = [
     id: 'ghz',
     label: 'GHZ State',
     description: '3-qubit entanglement',
+    info: {
+      name: 'GHZ State  |GHZ⟩ = (|000⟩ + |111⟩)/√2',
+      what: 'The Greenberger-Horne-Zeilinger state is a maximally entangled 3-qubit state. It generalises the Bell state to three qubits and is used in quantum error correction, quantum cryptography, and tests of quantum non-locality.',
+      how: 'H on qubit 0 creates superposition. The first CNOT entangles qubit 1 with qubit 0. The second CNOT entangles qubit 2 with qubit 0. All three qubits are now linked through a single entangled state.',
+      expect: '50% probability on |000⟩ and 50% on |111⟩. All other basis states — |001⟩, |010⟩, |011⟩, |100⟩, |101⟩, |110⟩ — have exactly zero probability.',
+      physics: 'GHZ states provide the strongest possible violation of Bell inequalities, proving that quantum mechanics cannot be explained by any local hidden variable theory.',
+    },
     nQubits: 3,
     gates: [
       { qubit: 0, step: 0, gate: 'H' },
@@ -39,6 +53,13 @@ const PRESETS = [
     id: 'superposition',
     label: 'Full Superposition',
     description: 'All qubits in equal superposition',
+    info: {
+      name: 'Equal Superposition  H⊗³|000⟩ = |+⟩⊗³',
+      what: 'Applying H to every qubit creates a uniform superposition of all 2ⁿ basis states simultaneously. This is the starting point for most quantum algorithms — it gives the quantum computer access to all possible inputs at once.',
+      how: 'H is applied independently to each qubit. Since the qubits are not entangled with each other, the combined state is a simple tensor product: |+⟩ ⊗ |+⟩ ⊗ |+⟩.',
+      expect: 'Equal probability of 12.5% on all 8 basis states: |000⟩, |001⟩, |010⟩, |011⟩, |100⟩, |101⟩, |110⟩, |111⟩. This is quantum parallelism — all states exist simultaneously.',
+      physics: 'This illustrates quantum parallelism. A classical 3-bit register can only hold one of 8 values at a time. A 3-qubit register in superposition holds all 8 simultaneously — the foundation of quantum computational advantage.',
+    },
     nQubits: 3,
     gates: [
       { qubit: 0, step: 0, gate: 'H' },
@@ -50,6 +71,13 @@ const PRESETS = [
     id: 'phase-kickback',
     label: 'Phase Kickback',
     description: 'HZH = X — interference in action',
+    info: {
+      name: 'Phase Kickback  H → Z → H = X',
+      what: 'This circuit demonstrates that Z — which appears to do nothing measurable on its own — creates a hidden phase difference that the second H gate converts into a completely different measurable outcome. It is the core mechanism behind both Deutsch-Jozsa and Grover\'s oracle.',
+      how: 'H creates superposition (|0⟩+|1⟩)/√2. Z flips the phase of |1⟩ to give (|0⟩−|1⟩)/√2. The second H applies interference: the |0⟩ components cancel (destructive) and the |1⟩ components reinforce (constructive). Result: |1⟩ with 100% certainty.',
+      expect: '100% probability on |1⟩. Starting from |0⟩, the sequence H → Z → H is mathematically identical to applying a single X gate — but achieved through phase manipulation and interference rather than a direct flip.',
+      physics: 'This is quantum interference made visible. The Z gate encoded information as phase — invisible to measurement. The H gate decoded it back into amplitude — now visible. This phase-to-amplitude conversion is how quantum algorithms extract answers from oracles.',
+    },
     nQubits: 1,
     gates: [
       { qubit: 0, step: 0, gate: 'H' },
@@ -61,22 +89,25 @@ const PRESETS = [
     id: 'teleportation',
     label: 'Teleportation Prep',
     description: 'Entanglement as a quantum resource',
+    info: {
+      name: 'Quantum Teleportation Preparation',
+      what: 'Quantum teleportation transfers a qubit state from one location to another using a shared Bell pair and two classical bits. This circuit implements the preparation and encoding stages — demonstrating how entanglement is used as a resource to transmit quantum information.',
+      how: 'A Bell pair is created between qubits 1 and 2 (the quantum channel). Qubit 0 (the message) is put into superposition with H, then a Bell measurement is performed on qubits 0 and 1 using CNOT and H. This encodes the message state into the entanglement correlations.',
+      expect: 'The probabilities will be distributed across multiple states. The key insight is not the specific outcome but the protocol — the message qubit\'s state has been encoded into the joint system and can be reconstructed at qubit 2 using classical corrections.',
+      physics: 'Quantum teleportation does not transmit matter or information faster than light. It uses a pre-shared entangled pair plus two classical bits to faithfully reconstruct an arbitrary qubit state. It proves that entanglement is a physical resource that can be consumed to transmit quantum information.',
+    },
     nQubits: 3,
     gates: [
-      // Create Bell pair between q1 and q2
       { qubit: 1, step: 0, gate: 'H' },
       { qubit: 1, step: 1, gate: 'CNOT', role: 'control', linkedQubit: 2 },
       { qubit: 2, step: 1, gate: 'CNOT', role: 'target',  linkedQubit: 1 },
-      // Encode message qubit q0
       { qubit: 0, step: 2, gate: 'H' },
-      // Bell measurement on q0 and q1
       { qubit: 0, step: 3, gate: 'CNOT', role: 'control', linkedQubit: 1 },
       { qubit: 1, step: 3, gate: 'CNOT', role: 'target',  linkedQubit: 0 },
       { qubit: 0, step: 4, gate: 'H' },
     ]
   },
 ]
-
 const GATES = [
   {
     id: 'H', label: 'H', color: 'var(--gate-h)',
@@ -145,7 +176,7 @@ export default function CircuitBuilder() {
   const [stepIndex,    setStepIndex]    = useState(null)
   const [measured,       setMeasured]       = useState(null)
   const [measuring,      setMeasuring]      = useState(false)
-
+  const [activePreset, setActivePreset] = useState(null)
   // ── Qubit count change ─────────────────────────────
   function handleQubitChange(n) {
     setNQubits(n)
@@ -157,6 +188,7 @@ export default function CircuitBuilder() {
 
   // ── Cell click ─────────────────────────────────────
   function handleCellClick(qubit, step) {
+    setActivePreset(null)
     if (selectedGate === 'CNOT') {
       if (cnotControl === null) {
         setCnotControl({ qubit, step })
@@ -195,6 +227,7 @@ export default function CircuitBuilder() {
     setStepIndex(null)
     setMeasured(null)
     setMeasuring(false)
+    setActivePreset(null)
   }
   // ── Load preset circuit ────────────────────────────
   // Builds the grid from a preset definition.
@@ -213,6 +246,8 @@ export default function CircuitBuilder() {
     setError(null)
     setCnotControl(null)
     setStepIndex(null)
+    setMeasured(null)
+    setActivePreset(preset) 
   }
 
   // ── Run simulation ─────────────────────────────────
@@ -545,7 +580,7 @@ function handleStepReset() {
         )}
 
       {/* Circuit grid */}
-      <div style={styles.gridWrapper}>
+      <div style={styles.er}>
 
         {/* SVG overlay for CNOT vertical lines
             Sits on top of the grid cells using absolute positioning
@@ -613,6 +648,46 @@ function handleStepReset() {
         </div>
 
       </div>
+      {/* ── Preset Information Panel ── */}
+      {activePreset && result && (
+        <div className="fade-slide-up" style={styles.presetInfoPanel}>
+
+          {/* Header */}
+          <div style={styles.presetInfoHeader}>
+            <div style={styles.presetInfoIcon}>⚛</div>
+            <div>
+              <div style={styles.presetInfoName}>
+                {activePreset.info.name}
+              </div>
+            </div>
+          </div>
+
+          {/* Four info sections */}
+          <div style={styles.presetInfoGrid}>
+
+            <div style={styles.presetInfoSection}>
+              <div style={styles.presetInfoLabel}>What it is</div>
+              <div style={styles.presetInfoText}>{activePreset.info.what}</div>
+            </div>
+
+            <div style={styles.presetInfoSection}>
+              <div style={styles.presetInfoLabel}>How it works</div>
+              <div style={styles.presetInfoText}>{activePreset.info.how}</div>
+            </div>
+
+            <div style={styles.presetInfoSection}>
+              <div style={styles.presetInfoLabel}>What to expect</div>
+              <div style={styles.presetInfoText}>{activePreset.info.expect}</div>
+            </div>
+
+            <div style={styles.presetInfoSection}>
+              <div style={styles.presetInfoLabel}>Physics insight</div>
+              <div style={styles.presetInfoText}>{activePreset.info.physics}</div>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* Error */}
       {error && <div style={styles.error}>{error}</div>}
@@ -1119,5 +1194,56 @@ measureResultDesc: {
   color: 'var(--text-secondary)',
   fontFamily: 'var(--font-mono)',
   lineHeight: '1.6',
+},
+presetInfoPanel: {
+  background: 'rgba(255, 159, 10, 0.06)',
+  borderRadius: '14px',
+  border: '1px solid rgba(255, 159, 10, 0.25)',
+  padding: '20px 24px',
+  marginBottom: '20px',
+},
+presetInfoHeader: {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  marginBottom: '16px',
+  paddingBottom: '14px',
+  borderBottom: '1px solid rgba(255, 159, 10, 0.2)',
+},
+presetInfoIcon: {
+  fontSize: '22px',
+  flexShrink: 0,
+},
+presetInfoName: {
+  fontSize: '14px',
+  fontWeight: '700',
+  color: '#ff9f0a',
+  fontFamily: 'var(--font-mono)',
+  letterSpacing: '-0.01em',
+},
+presetInfoGrid: {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+  gap: '16px',
+},
+presetInfoSection: {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '6px',
+},
+presetInfoLabel: {
+  fontSize: '10px',
+  color: '#ff9f0a',
+  fontFamily: 'var(--font-mono)',
+  fontWeight: '700',
+  textTransform: 'uppercase',
+  letterSpacing: '0.1em',
+  opacity: 0.8,
+},
+presetInfoText: {
+  fontSize: '12px',
+  color: 'var(--text-secondary)',
+  fontFamily: 'var(--font-mono)',
+  lineHeight: '1.65',
 },
 }

@@ -6,10 +6,10 @@ import Tutorials      from './components/Tutorials'
 import './index.css'
 
 const TABS = [
-  { id: 'playground',   label: '⚛ Playground'  },
-  { id: 'algorithms',   label: '📊 Algorithms'  },
-  { id: 'entanglement', label: '🔮 Entanglement' },
-  { id: 'learn',        label: '📖 Learn'        },
+  { id: 'playground',   label: ' Playground'  },
+  { id: 'algorithms',   label: ' Algorithms'  },
+  { id: 'entanglement', label: ' Entanglement' },
+  { id: 'learn',        label: ' Learn'        },
 ]
 
 function QuantumBackground() {
