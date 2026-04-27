@@ -1,6 +1,6 @@
 # QSIM — Web-Based Quantum Circuit Simulator & Visualizer
 
-> A full-stack interactive quantum computing educational platform built as a final year  project for a BSc in Applied Physics and Computer Science.
+> A full-stack interactive quantum computing educational platform.
 
 **Live Application:** https://q-team-project.vercel.app  
 **Backend API:** https://qsim-api.onrender.com  
@@ -295,11 +295,10 @@ uvicorn main:app --host 0.0.0.0 --port 10000
 
 ## Academic Context
 
-This project was developed as a final year thesis for the Bachelor of Science in Applied Physics and Computer Science at Multimedia University of Kenya (2021–2026).
+This project was developed as a personal objective in understanding quantum computing fundamentals and assisting in bridging between the abstract and practical concepts of quantum computing
 
 **Thesis title:** A Web-Based Interactive Quantum Computing Simulator and Visualizer  
-**Student:** Haron Abdullahi Yusuf  
-**Registration:** SCT-253-018/2021  
+By:  Haron Abdullahi Yusuf  
 
 
 ### Key Design Decisions
