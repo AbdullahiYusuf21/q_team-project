@@ -153,7 +153,7 @@ export default function App() {
               <div style={styles.logoBadge}>BETA</div>
             </div>
             <div style={styles.headerDivider} />
-            <p style={styles.tagline}>Quantum Circuit Simulator</p>
+            <p style={styles.tagline}>Quantum Simulator and Visualiser</p>
           </div>
           <div style={styles.headerRight}>
             <div style={styles.liveIndicator}>
