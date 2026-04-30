@@ -10,6 +10,8 @@ const CELL_GAP = 6
 const CELL_HEIGHT = 40
 const ROW_GAP = 8
 const QUBIT_LABEL_WIDTH = 52
+const GRID_PADDING_TOP  = 20  // matches gridWrapper padding top
+const GRID_PADDING_LEFT = 16  // matches gridWrapper padding left
 const PRESETS = [
   {
     id: 'bell',
@@ -408,11 +410,23 @@ function handleStepReset() {
         const cell = grid[qubit][step]
         if (cell?.gate === 'CNOT' && cell?.role === 'control') {
           const targetQubit = cell.linkedQubit
-          lines.push({
-            x:  cellCenterX(step),
-            y1: cellCenterY(Math.min(qubit, targetQubit)),
-            y2: cellCenterY(Math.max(qubit, targetQubit)),
-          })
+          // Calculate x centre of this step's column
+          // Accounting for qubit label width and cell gaps
+          const x = GRID_PADDING_LEFT
+                  + QUBIT_LABEL_WIDTH
+                  + step * (CELL_WIDTH + CELL_GAP)
+                  + CELL_WIDTH / 2
+
+          // Calculate y centre of each qubit row
+          // each row is CELL_HEIGHT tall with ROW_GAP between rows
+          const y1 = GRID_PADDING_TOP
+                   + Math.min(qubit, targetQubit) * (CELL_HEIGHT + ROW_GAP)
+                   + CELL_HEIGHT / 2
+          const y2 = GRID_PADDING_TOP
+                   + Math.max(qubit, targetQubit) * (CELL_HEIGHT + ROW_GAP)
+
+                   + CELL_HEIGHT / 2
+          lines.push({ x, y1, y2 })  
         }
       }
     }
@@ -580,7 +594,7 @@ function handleStepReset() {
         )}
 
       {/* Circuit grid */}
-      <div style={styles.er}>
+      <div style={styles.gridWrapper}>
 
         {/* SVG overlay for CNOT vertical lines
             Sits on top of the grid cells using absolute positioning
@@ -588,10 +602,10 @@ function handleStepReset() {
         <svg
           style={{
             position: 'absolute',
-            top: 20,
+            top: 0,
             left: 0,
             width: '100%',
-            height: svgHeight,
+            height: '100%',
             pointerEvents: 'none',
             zIndex: 2,
             overflow: 'visible',
@@ -606,7 +620,7 @@ function handleStepReset() {
               y2={line.y2}
               stroke="var(--gate-cnot)"
               strokeWidth="1.5"
-              strokeDasharray="none"
+              
             />
           ))}
         </svg>
@@ -956,7 +970,7 @@ const styles = {
     background: 'var(--bg-card)',
     borderRadius: '14px',
     border: '1px solid var(--border)',
-    padding: '20px 16px',
+    padding: `${GRID_PADDING_TOP}px ${GRID_PADDING_LEFT}px`,
     marginBottom: '20px',
     position: 'relative',
     overflowX: 'auto',
