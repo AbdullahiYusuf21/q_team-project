@@ -157,6 +157,7 @@ h1, h2, h3, h4 {
   transition: opacity 0.15s ease, transform 0.15s ease;
   box-shadow: var(--shadow);
   z-index: 100;
+  
 }
 
 .tooltip-wrapper .tooltip-title {
